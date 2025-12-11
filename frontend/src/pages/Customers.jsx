@@ -1,0 +1,163 @@
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import api from '../api';
+import { Plus, Search, MessageCircle, User } from 'lucide-react';
+
+export default function Customers() {
+  const [customers, setCustomers] = useState([]);
+  const [search, setSearch] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [form, setForm] = useState({ name: '', whatsapp: '', country: '', notes: '' });
+  const [loading, setLoading] = useState(true);
+
+  const fetchCustomers = () => {
+    api.get('/customers', { params: { search: search || undefined } })
+      .then(res => {
+        setCustomers(res.data);
+        setLoading(false);
+      });
+  };
+
+  useEffect(() => {
+    fetchCustomers();
+  }, [search]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    await api.post('/customers', form);
+    setShowModal(false);
+    setForm({ name: '', whatsapp: '', country: '', notes: '' });
+    fetchCustomers();
+  };
+
+  const openWhatsApp = (phone, name) => {
+    const message = encodeURIComponent(`Hi ${name}! This is Mathaka Gift Store.`);
+    window.open(`https://wa.me/${phone.replace(/[^0-9]/g, '')}?text=${message}`, '_blank');
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+        <h1 className="text-2xl font-bold">Customers</h1>
+        <button
+          onClick={() => setShowModal(true)}
+          className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
+        >
+          <Plus size={20} /> Add Customer
+        </button>
+      </div>
+
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+        <input
+          type="text"
+          placeholder="Search customers..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full pl-10 pr-4 py-2 border rounded-lg"
+        />
+      </div>
+
+      {/* Customer List */}
+      <div className="bg-white rounded-xl shadow-sm divide-y">
+        {loading ? (
+          <p className="p-4 text-center">Loading...</p>
+        ) : customers.length === 0 ? (
+          <p className="p-8 text-center text-gray-500">No customers found</p>
+        ) : (
+          customers.map(customer => (
+            <div key={customer.id} className="p-4 flex items-center justify-between hover:bg-gray-50">
+              <Link to={`/customers/${customer.id}`} className="flex items-center gap-3 flex-1">
+                <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                  <User className="text-purple-600" size={20} />
+                </div>
+                <div>
+                  <p className="font-medium">{customer.name}</p>
+                  <p className="text-sm text-gray-500">{customer.whatsapp} • {customer.country || 'N/A'}</p>
+                </div>
+              </Link>
+              <div className="flex items-center gap-2">
+                <span className="text-xs bg-gray-100 px-2 py-1 rounded">
+                  {customer.invoice_count} orders
+                </span>
+                <button
+                  onClick={() => openWhatsApp(customer.whatsapp, customer.name)}
+                  className="p-2 text-green-600 hover:bg-green-50 rounded-lg"
+                >
+                  <MessageCircle size={20} />
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Add Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl w-full max-w-md p-6">
+            <h2 className="text-xl font-bold mb-4">Add Customer</h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Name *</label>
+                <input
+                  type="text"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">WhatsApp Number *</label>
+                <input
+                  type="text"
+                  value={form.whatsapp}
+                  onChange={(e) => setForm({ ...form, whatsapp: e.target.value })}
+                  placeholder="+971XXXXXXXXX"
+                  className="w-full px-3 py-2 border rounded-lg"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Country</label>
+                <input
+                  type="text"
+                  value={form.country}
+                  onChange={(e) => setForm({ ...form, country: e.target.value })}
+                  placeholder="UAE, Qatar, Saudi..."
+                  className="w-full px-3 py-2 border rounded-lg"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Notes</label>
+                <textarea
+                  value={form.notes}
+                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg"
+                  rows={2}
+                />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="px-4 py-2 border rounded-lg"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                >
+                  Add Customer
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

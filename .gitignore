@@ -1,0 +1,6 @@
+node_modules/
+.env
+*.sqlite
+backend/uploads/logo.png
+dist/
+.DS_Store
