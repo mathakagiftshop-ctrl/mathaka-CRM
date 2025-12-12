@@ -19,6 +19,7 @@ import Expenses from './pages/Expenses';
 import Reports from './pages/Reports';
 import DeliveryZones from './pages/DeliveryZones';
 import ActivityLog from './pages/ActivityLog';
+import InstallPrompt from './components/InstallPrompt';
 
 const AuthContext = createContext(null);
 
@@ -72,6 +73,7 @@ export default function App() {
   return (
     <AuthContext.Provider value={{ user, login, logout }}>
       <BrowserRouter>
+        <InstallPrompt />
         <Routes>
           <Route path="/login" element={user ? <Navigate to="/" /> : <Login />} />
           <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
