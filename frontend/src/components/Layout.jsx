@@ -5,6 +5,7 @@ import {
   Home, Users, FileText, Receipt, Truck, Calendar, Settings, LogOut, Menu, X, Gift,
   Package, MapPin, DollarSign, BarChart3, Activity, MoreHorizontal
 } from 'lucide-react';
+import NotificationBell from './NotificationBell';
 
 export default function Layout() {
   const { user, logout } = useAuth();
@@ -96,13 +97,16 @@ export default function Layout() {
           <Gift className="text-purple-600" size={24} />
           <span className="font-bold text-lg">Mathaka</span>
         </div>
-        <button 
-          onClick={() => setSidebarOpen(!sidebarOpen)} 
-          className="p-2 touch-target flex items-center justify-center"
-          aria-label="Toggle menu"
-        >
-          {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
+        <div className="flex items-center gap-1">
+          <NotificationBell />
+          <button 
+            onClick={() => setSidebarOpen(!sidebarOpen)} 
+            className="p-2 touch-target flex items-center justify-center"
+            aria-label="Toggle menu"
+          >
+            {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
       </div>
 
       {/* Sidebar */}
@@ -110,9 +114,12 @@ export default function Layout() {
         fixed inset-y-0 left-0 z-50 w-64 bg-white border-r transform transition-transform duration-300 ease-out lg:translate-x-0
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
-        <div className="p-4 border-b hidden lg:flex items-center gap-2">
-          <Gift className="text-purple-600" size={28} />
-          <span className="font-bold text-xl">Mathaka CRM</span>
+        <div className="p-4 border-b hidden lg:flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Gift className="text-purple-600" size={28} />
+            <span className="font-bold text-xl">Mathaka CRM</span>
+          </div>
+          <NotificationBell />
         </div>
         
         {/* Mobile sidebar header */}
