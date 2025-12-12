@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../api';
 import { ArrowLeft, Download, MessageCircle, Receipt, Trash2, CheckCircle, Package, Truck, Gift, Camera } from 'lucide-react';
+import { generateInvoicePDF, generateReceiptPDF } from '../utils/pdfGenerator';
 
 export default function InvoiceDetail() {
   const { id } = useParams();
@@ -9,52 +10,35 @@ export default function InvoiceDetail() {
   const [invoice, setInvoice] = useState(null);
   const [receipt, setReceipt] = useState(null);
   const [photos, setPhotos] = useState([]);
+  const [settings, setSettings] = useState({});
   const [loading, setLoading] = useState(true);
 
   const fetchInvoice = () => {
     Promise.all([
       api.get(`/invoices/${id}`),
       api.get(`/receipts/invoice/${id}`),
-      api.get(`/invoices/${id}/photos`)
-    ]).then(([inv, rec, ph]) => {
+      api.get(`/invoices/${id}/photos`),
+      api.get('/settings')
+    ]).then(([inv, rec, ph, set]) => {
       setInvoice(inv.data);
       setReceipt(rec.data);
       setPhotos(ph.data);
+      setSettings(set.data);
       setLoading(false);
     });
   };
 
   useEffect(() => { fetchInvoice(); }, [id]);
 
-  const downloadPDF = async () => {
-    try {
-      const response = await api.get(`/invoices/${id}/pdf`, { responseType: 'blob' });
-      const blob = new Blob([response.data], { type: 'application/pdf' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${invoice.invoice_number}.pdf`;
-      link.click();
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      alert('Error downloading PDF');
-    }
+  const downloadPDF = () => {
+    const doc = generateInvoicePDF(invoice, settings);
+    doc.save(`${invoice.invoice_number}.pdf`);
   };
 
-  const downloadReceiptPDF = async () => {
+  const downloadReceiptPDF = () => {
     if (receipt) {
-      try {
-        const response = await api.get(`/receipts/${receipt.id}/pdf`, { responseType: 'blob' });
-        const blob = new Blob([response.data], { type: 'application/pdf' });
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `${receipt.receipt_number}.pdf`;
-        link.click();
-        window.URL.revokeObjectURL(url);
-      } catch (err) {
-        alert('Error downloading PDF');
-      }
+      const doc = generateReceiptPDF(receipt, invoice, invoice.items, settings);
+      doc.save(`${receipt.receipt_number}.pdf`);
     }
   };
 

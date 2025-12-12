@@ -2,31 +2,30 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api';
 import { Receipt, Download } from 'lucide-react';
+import { generateReceiptPDF } from '../utils/pdfGenerator';
 
 export default function Receipts() {
   const [receipts, setReceipts] = useState([]);
+  const [settings, setSettings] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get('/receipts').then(res => {
-      setReceipts(res.data);
+    Promise.all([api.get('/receipts'), api.get('/settings')]).then(([rec, set]) => {
+      setReceipts(rec.data);
+      setSettings(set.data);
       setLoading(false);
     });
   }, []);
 
-  const downloadPDF = async (receiptId, receiptNumber, e) => {
+  const downloadPDF = async (receipt, e) => {
     e.preventDefault();
     try {
-      const response = await api.get(`/receipts/${receiptId}/pdf`, { responseType: 'blob' });
-      const blob = new Blob([response.data], { type: 'application/pdf' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${receiptNumber}.pdf`;
-      link.click();
-      window.URL.revokeObjectURL(url);
+      const invRes = await api.get(`/invoices/${receipt.invoice_id}`);
+      const invoice = invRes.data;
+      const doc = generateReceiptPDF(receipt, invoice, invoice.items, settings);
+      doc.save(`${receipt.receipt_number}.pdf`);
     } catch (err) {
-      alert('Error downloading PDF');
+      alert('Error generating PDF');
     }
   };
 
@@ -57,7 +56,7 @@ export default function Receipts() {
                   <p className="text-xs text-gray-500">{new Date(rec.created_at).toLocaleDateString()}</p>
                 </div>
                 <button
-                  onClick={(e) => downloadPDF(rec.id, rec.receipt_number, e)}
+                  onClick={(e) => downloadPDF(rec, e)}
                   className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg"
                   title="Download PDF"
                 >
