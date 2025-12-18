@@ -579,12 +579,25 @@ export default async function handler(req, res) {
         const newTotal = currentPaid + paymentAmount;
         if (newTotal > total) return error(res, `Payment exceeds balance. Maximum payment: Rs. ${(total - currentPaid).toFixed(2)}`, 400);
         const { data: payment } = await supabase.from('payments').insert({ invoice_id, amount: paymentAmount, payment_method: payment_method || 'bank_transfer', notes, created_by: user.id }).select().single();
+        let receipt_number = null;
         if (newTotal >= total) {
           await supabase.from('invoices').update({ status: 'paid', paid_at: new Date().toISOString(), amount_paid: newTotal }).eq('id', invoice_id);
+          // Auto-generate receipt when fully paid
+          const { data: existing } = await supabase.from('receipts').select('id').eq('invoice_id', invoice_id).single();
+          if (!existing) {
+            const { data: prefixSetting } = await supabase.from('settings').select('value').eq('key', 'receipt_prefix').single();
+            const prefix = prefixSetting?.value || 'RCP';
+            const year = new Date().getFullYear();
+            const { data: lastReceipt } = await supabase.from('receipts').select('receipt_number').like('receipt_number', `${prefix}-${year}-%`).order('id', { ascending: false }).limit(1).single();
+            let nextNum = 1;
+            if (lastReceipt) { const parts = lastReceipt.receipt_number.split('-'); nextNum = parseInt(parts[2]) + 1; }
+            receipt_number = `${prefix}-${year}-${String(nextNum).padStart(4, '0')}`;
+            await supabase.from('receipts').insert({ receipt_number, invoice_id, amount: total, payment_method: payment_method || 'bank_transfer', notes: 'Auto-generated on full payment' });
+          }
         } else {
           await supabase.from('invoices').update({ amount_paid: newTotal }).eq('id', invoice_id);
         }
-        return json(res, { id: payment.id, amount_paid: newTotal, balance: total - newTotal, is_fully_paid: newTotal >= total });
+        return json(res, { id: payment.id, amount_paid: newTotal, balance: total - newTotal, is_fully_paid: newTotal >= total, receipt_number });
       }
       if (method === 'DELETE' && segments[1]) {
         const { data: payment } = await supabase.from('payments').select('invoice_id, amount').eq('id', segments[1]).single();

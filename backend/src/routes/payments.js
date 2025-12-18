@@ -65,6 +65,8 @@ router.post('/', authenticate, async (req, res) => {
     
     if (error) throw error;
     
+    let receipt_number = null;
+    
     // Check if fully paid and update status
     if (newTotal >= total) {
       await supabase
@@ -75,6 +77,43 @@ router.post('/', authenticate, async (req, res) => {
           amount_paid: newTotal
         })
         .eq('id', invoice_id);
+      
+      // Auto-generate receipt when fully paid
+      const { data: existing } = await supabase
+        .from('receipts')
+        .select('id')
+        .eq('invoice_id', invoice_id)
+        .single();
+      
+      if (!existing) {
+        const { data: prefixSetting } = await supabase
+          .from('settings')
+          .select('value')
+          .eq('key', 'receipt_prefix')
+          .single();
+        const prefix = prefixSetting?.value || 'RCP';
+        const year = new Date().getFullYear();
+        const { data: lastReceipt } = await supabase
+          .from('receipts')
+          .select('receipt_number')
+          .like('receipt_number', `${prefix}-${year}-%`)
+          .order('id', { ascending: false })
+          .limit(1)
+          .single();
+        let nextNum = 1;
+        if (lastReceipt) {
+          const parts = lastReceipt.receipt_number.split('-');
+          nextNum = parseInt(parts[2]) + 1;
+        }
+        receipt_number = `${prefix}-${year}-${String(nextNum).padStart(4, '0')}`;
+        await supabase.from('receipts').insert({
+          receipt_number,
+          invoice_id,
+          amount: total,
+          payment_method: payment_method || 'bank_transfer',
+          notes: 'Auto-generated on full payment'
+        });
+      }
     } else {
       // Update amount_paid (trigger should do this, but let's be safe)
       await supabase
@@ -87,7 +126,8 @@ router.post('/', authenticate, async (req, res) => {
       id: payment.id, 
       amount_paid: newTotal,
       balance: total - newTotal,
-      is_fully_paid: newTotal >= total
+      is_fully_paid: newTotal >= total,
+      receipt_number
     });
   } catch (err) {
     console.error(err);
