@@ -562,6 +562,45 @@ export default async function handler(req, res) {
       }
     }
 
+    // PAYMENTS (advance/partial payments)
+    if (segments[0] === 'payments') {
+      if (method === 'GET' && segments[1] === 'invoice' && segments[2]) {
+        const { data } = await supabase.from('payments').select('*').eq('invoice_id', segments[2]).order('payment_date', { ascending: false });
+        return json(res, data || []);
+      }
+      if (method === 'POST') {
+        const { invoice_id, amount, payment_method, notes } = req.body;
+        const { data: invoice } = await supabase.from('invoices').select('total, amount_paid, status').eq('id', invoice_id).single();
+        if (!invoice) return error(res, 'Invoice not found', 404);
+        if (invoice.status === 'cancelled') return error(res, 'Cannot add payment to cancelled invoice', 400);
+        const currentPaid = parseFloat(invoice.amount_paid) || 0;
+        const total = parseFloat(invoice.total);
+        const paymentAmount = parseFloat(amount);
+        const newTotal = currentPaid + paymentAmount;
+        if (newTotal > total) return error(res, `Payment exceeds balance. Maximum payment: Rs. ${(total - currentPaid).toFixed(2)}`, 400);
+        const { data: payment } = await supabase.from('payments').insert({ invoice_id, amount: paymentAmount, payment_method: payment_method || 'bank_transfer', notes, created_by: user.id }).select().single();
+        if (newTotal >= total) {
+          await supabase.from('invoices').update({ status: 'paid', paid_at: new Date().toISOString(), amount_paid: newTotal }).eq('id', invoice_id);
+        } else {
+          await supabase.from('invoices').update({ amount_paid: newTotal }).eq('id', invoice_id);
+        }
+        return json(res, { id: payment.id, amount_paid: newTotal, balance: total - newTotal, is_fully_paid: newTotal >= total });
+      }
+      if (method === 'DELETE' && segments[1]) {
+        const { data: payment } = await supabase.from('payments').select('invoice_id, amount').eq('id', segments[1]).single();
+        if (!payment) return error(res, 'Payment not found', 404);
+        await supabase.from('payments').delete().eq('id', segments[1]);
+        const { data: invoice } = await supabase.from('invoices').select('total, amount_paid, status').eq('id', payment.invoice_id).single();
+        const newPaid = (parseFloat(invoice.amount_paid) || 0) - parseFloat(payment.amount);
+        if (invoice.status === 'paid' && newPaid < parseFloat(invoice.total)) {
+          await supabase.from('invoices').update({ status: 'pending', paid_at: null, amount_paid: newPaid }).eq('id', payment.invoice_id);
+        } else {
+          await supabase.from('invoices').update({ amount_paid: newPaid }).eq('id', payment.invoice_id);
+        }
+        return json(res, { success: true });
+      }
+    }
+
     return error(res, 'Not found', 404);
   } catch (err) {
     console.error(err);

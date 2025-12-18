@@ -20,6 +20,7 @@ import packageRoutes from './routes/packages.js';
 import expenseRoutes from './routes/expenses.js';
 import activityLogRoutes from './routes/activityLog.js';
 import reportRoutes from './routes/reports.js';
+import paymentRoutes from './routes/payments.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -49,6 +50,7 @@ app.use('/api/packages', packageRoutes);
 app.use('/api/expenses', expenseRoutes);
 app.use('/api/activity-log', activityLogRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

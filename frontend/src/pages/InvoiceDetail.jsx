@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../api';
-import { ArrowLeft, Download, MessageCircle, Receipt, Trash2, CheckCircle, Package, Truck, Gift, Camera } from 'lucide-react';
+import { ArrowLeft, Download, MessageCircle, Receipt, Trash2, CheckCircle, Package, Truck, Gift, Camera, DollarSign, Plus, X } from 'lucide-react';
 import { generateInvoicePDF, generateReceiptPDF } from '../utils/pdfGenerator';
 
 export default function InvoiceDetail() {
@@ -9,19 +9,24 @@ export default function InvoiceDetail() {
   const navigate = useNavigate();
   const [invoice, setInvoice] = useState(null);
   const [receipt, setReceipt] = useState(null);
+  const [payments, setPayments] = useState([]);
   const [photos, setPhotos] = useState([]);
   const [settings, setSettings] = useState({});
   const [loading, setLoading] = useState(true);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentForm, setPaymentForm] = useState({ amount: '', payment_method: 'bank_transfer', notes: '' });
 
   const fetchInvoice = () => {
     Promise.all([
       api.get(`/invoices/${id}`),
       api.get(`/receipts/invoice/${id}`),
+      api.get(`/payments/invoice/${id}`),
       api.get(`/invoices/${id}/photos`),
       api.get('/settings')
-    ]).then(([inv, rec, ph, set]) => {
+    ]).then(([inv, rec, pay, ph, set]) => {
       setInvoice(inv.data);
       setReceipt(rec.data);
+      setPayments(pay.data || []);
       setPhotos(ph.data);
       setSettings(set.data);
       setLoading(false);
@@ -45,6 +50,36 @@ export default function InvoiceDetail() {
   const markAsPaid = async () => {
     await api.post('/receipts', { invoice_id: id, payment_method: 'bank_transfer' });
     fetchInvoice();
+  };
+
+  const addPayment = async (e) => {
+    e.preventDefault();
+    try {
+      await api.post('/payments', { 
+        invoice_id: id, 
+        amount: parseFloat(paymentForm.amount),
+        payment_method: paymentForm.payment_method,
+        notes: paymentForm.notes
+      });
+      setShowPaymentModal(false);
+      setPaymentForm({ amount: '', payment_method: 'bank_transfer', notes: '' });
+      fetchInvoice();
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to add payment');
+    }
+  };
+
+  const deletePayment = async (paymentId) => {
+    if (confirm('Delete this payment?')) {
+      await api.delete(`/payments/${paymentId}`);
+      fetchInvoice();
+    }
+  };
+
+  const getBalanceDue = () => {
+    const total = parseFloat(invoice?.total) || 0;
+    const paid = parseFloat(invoice?.amount_paid) || 0;
+    return total - paid;
   };
 
   const updateOrderStatus = async (newStatus) => {
@@ -192,8 +227,8 @@ export default function InvoiceDetail() {
           <MessageCircle size={18} /> Send WhatsApp
         </button>
         {invoice.status === 'pending' && (
-          <button onClick={markAsPaid} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-            <CheckCircle size={18} /> Mark as Paid
+          <button onClick={() => setShowPaymentModal(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            <DollarSign size={18} /> Add Payment
           </button>
         )}
         {receipt && (
@@ -210,6 +245,81 @@ export default function InvoiceDetail() {
           <Trash2 size={18} />
         </button>
       </div>
+
+      {/* Payment Modal */}
+      {showPaymentModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold">Add Payment</h2>
+              <button onClick={() => setShowPaymentModal(false)} className="p-1 hover:bg-gray-100 rounded">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+              <div className="flex justify-between text-sm">
+                <span>Invoice Total:</span>
+                <span>Rs. {parseFloat(invoice.total).toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span>Already Paid:</span>
+                <span className="text-green-600">Rs. {parseFloat(invoice.amount_paid || 0).toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between font-semibold border-t mt-2 pt-2">
+                <span>Balance Due:</span>
+                <span className="text-red-600">Rs. {getBalanceDue().toLocaleString()}</span>
+              </div>
+            </div>
+            <form onSubmit={addPayment} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Amount (Rs.)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  max={getBalanceDue()}
+                  value={paymentForm.amount}
+                  onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })}
+                  className="w-full border rounded-lg px-3 py-2"
+                  placeholder={`Max: ${getBalanceDue().toLocaleString()}`}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Payment Method</label>
+                <select
+                  value={paymentForm.payment_method}
+                  onChange={(e) => setPaymentForm({ ...paymentForm, payment_method: e.target.value })}
+                  className="w-full border rounded-lg px-3 py-2"
+                >
+                  <option value="bank_transfer">Bank Transfer</option>
+                  <option value="cash">Cash</option>
+                  <option value="card">Card</option>
+                  <option value="paypal">PayPal</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Notes (optional)</label>
+                <input
+                  type="text"
+                  value={paymentForm.notes}
+                  onChange={(e) => setPaymentForm({ ...paymentForm, notes: e.target.value })}
+                  className="w-full border rounded-lg px-3 py-2"
+                  placeholder="e.g., Advance payment"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setShowPaymentModal(false)} className="flex-1 px-4 py-2 border rounded-lg">
+                  Cancel
+                </button>
+                <button type="submit" className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                  Add Payment
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Gift Message */}
       {invoice.gift_message && (
@@ -304,6 +414,62 @@ export default function InvoiceDetail() {
           </div>
         )}
       </div>
+
+      {/* Payment Summary & History */}
+      {(payments.length > 0 || invoice.status === 'pending') && (
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <h2 className="font-semibold mb-4 flex items-center gap-2">
+            <DollarSign size={18} /> Payment Summary
+          </h2>
+          
+          {/* Payment Progress */}
+          <div className="mb-4">
+            <div className="flex justify-between text-sm mb-1">
+              <span>Paid: Rs. {parseFloat(invoice.amount_paid || 0).toLocaleString()}</span>
+              <span>Total: Rs. {parseFloat(invoice.total).toLocaleString()}</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-3">
+              <div 
+                className={`h-3 rounded-full ${invoice.status === 'paid' ? 'bg-green-500' : 'bg-blue-500'}`}
+                style={{ width: `${Math.min(100, ((parseFloat(invoice.amount_paid) || 0) / parseFloat(invoice.total)) * 100)}%` }}
+              />
+            </div>
+            {invoice.status === 'pending' && getBalanceDue() > 0 && (
+              <p className="text-sm text-orange-600 mt-2">
+                Balance due: Rs. {getBalanceDue().toLocaleString()}
+              </p>
+            )}
+          </div>
+
+          {/* Payment History */}
+          {payments.length > 0 && (
+            <div className="border-t pt-4">
+              <h3 className="text-sm font-medium text-gray-500 mb-2">Payment History</h3>
+              <div className="space-y-2">
+                {payments.map((payment) => (
+                  <div key={payment.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="font-medium">Rs. {parseFloat(payment.amount).toLocaleString()}</p>
+                      <p className="text-xs text-gray-500">
+                        {new Date(payment.payment_date).toLocaleString()} • {payment.payment_method === 'bank_transfer' ? 'Bank Transfer' : payment.payment_method}
+                        {payment.notes && ` • ${payment.notes}`}
+                      </p>
+                    </div>
+                    {invoice.status === 'pending' && (
+                      <button 
+                        onClick={() => deletePayment(payment.id)}
+                        className="p-1 text-red-500 hover:bg-red-50 rounded"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Receipt Info */}
       {receipt && (
