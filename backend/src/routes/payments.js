@@ -115,10 +115,10 @@ router.post('/', authenticate, async (req, res) => {
         });
       }
     } else {
-      // Update amount_paid (trigger should do this, but let's be safe)
+      // Partial payment - set status to 'partial'
       await supabase
         .from('invoices')
-        .update({ amount_paid: newTotal })
+        .update({ status: 'partial', amount_paid: newTotal })
         .eq('id', invoice_id);
     }
     
@@ -160,11 +160,21 @@ router.delete('/:id', authenticate, async (req, res) => {
     
     const newPaid = (parseFloat(invoice.amount_paid) || 0) - parseFloat(payment.amount);
     
-    // If was fully paid, revert to pending
-    if (invoice.status === 'paid' && newPaid < parseFloat(invoice.total)) {
+    // Determine new status based on remaining amount
+    let newStatus = 'pending';
+    if (newPaid >= parseFloat(invoice.total)) newStatus = 'paid';
+    else if (newPaid > 0) newStatus = 'partial';
+    
+    // Update status if changed
+    if (invoice.status === 'paid' && newStatus !== 'paid') {
       await supabase
         .from('invoices')
-        .update({ status: 'pending', paid_at: null, amount_paid: newPaid })
+        .update({ status: newStatus, paid_at: null, amount_paid: newPaid })
+        .eq('id', payment.invoice_id);
+    } else {
+      await supabase
+        .from('invoices')
+        .update({ status: newStatus, amount_paid: newPaid })
         .eq('id', payment.invoice_id);
     }
     

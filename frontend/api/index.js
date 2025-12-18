@@ -329,11 +329,13 @@ export default async function handler(req, res) {
       const { count: totalCustomers } = await supabase.from('customers').select('*', { count: 'exact', head: true });
       const { count: totalInvoices } = await supabase.from('invoices').select('*', { count: 'exact', head: true });
       const { count: pendingInvoices } = await supabase.from('invoices').select('*', { count: 'exact', head: true }).eq('status', 'pending');
-      const { data: revenueData } = await supabase.from('invoices').select('total').eq('status', 'paid');
-      const totalRevenue = (revenueData || []).reduce((sum, inv) => sum + parseFloat(inv.total), 0);
+      // Revenue = sum of all amount_paid (includes partial payments)
+      const { data: revenueData } = await supabase.from('invoices').select('amount_paid').in('status', ['paid', 'partial']);
+      const totalRevenue = (revenueData || []).reduce((sum, inv) => sum + (parseFloat(inv.amount_paid) || 0), 0);
       const startOfMonth = new Date(); startOfMonth.setDate(1); startOfMonth.setHours(0, 0, 0, 0);
-      const { data: monthRevenueData } = await supabase.from('invoices').select('total').eq('status', 'paid').gte('paid_at', startOfMonth.toISOString());
-      const thisMonthRevenue = (monthRevenueData || []).reduce((sum, inv) => sum + parseFloat(inv.total), 0);
+      // This month revenue from payments table
+      const { data: monthPayments } = await supabase.from('payments').select('amount').gte('payment_date', startOfMonth.toISOString());
+      const thisMonthRevenue = (monthPayments || []).reduce((sum, p) => sum + parseFloat(p.amount), 0);
       const { data: recentInvoicesData } = await supabase.from('invoices').select(`id, invoice_number, total, status, created_at, customers (name)`).order('created_at', { ascending: false }).limit(5);
       const recentInvoices = (recentInvoicesData || []).map(inv => ({ ...inv, customer_name: inv.customers?.name }));
       const today = new Date();
@@ -595,7 +597,8 @@ export default async function handler(req, res) {
             await supabase.from('receipts').insert({ receipt_number, invoice_id, amount: total, payment_method: payment_method || 'bank_transfer', notes: 'Auto-generated on full payment' });
           }
         } else {
-          await supabase.from('invoices').update({ amount_paid: newTotal }).eq('id', invoice_id);
+          // Partial payment - set status to 'partial'
+          await supabase.from('invoices').update({ status: 'partial', amount_paid: newTotal }).eq('id', invoice_id);
         }
         return json(res, { id: payment.id, amount_paid: newTotal, balance: total - newTotal, is_fully_paid: newTotal >= total, receipt_number });
       }
@@ -605,8 +608,12 @@ export default async function handler(req, res) {
         await supabase.from('payments').delete().eq('id', segments[1]);
         const { data: invoice } = await supabase.from('invoices').select('total, amount_paid, status').eq('id', payment.invoice_id).single();
         const newPaid = (parseFloat(invoice.amount_paid) || 0) - parseFloat(payment.amount);
-        if (invoice.status === 'paid' && newPaid < parseFloat(invoice.total)) {
-          await supabase.from('invoices').update({ status: 'pending', paid_at: null, amount_paid: newPaid }).eq('id', payment.invoice_id);
+        // Determine new status based on remaining amount
+        let newStatus = 'pending';
+        if (newPaid >= parseFloat(invoice.total)) newStatus = 'paid';
+        else if (newPaid > 0) newStatus = 'partial';
+        if (invoice.status === 'paid' && newStatus !== 'paid') {
+          await supabase.from('invoices').update({ status: newStatus, paid_at: null, amount_paid: newPaid }).eq('id', payment.invoice_id);
         } else {
           await supabase.from('invoices').update({ amount_paid: newPaid }).eq('id', payment.invoice_id);
         }

@@ -131,6 +131,7 @@ export default function InvoiceDetail() {
 
   const statusColors = {
     pending: 'bg-yellow-100 text-yellow-700',
+    partial: 'bg-blue-100 text-blue-700',
     paid: 'bg-green-100 text-green-700',
     cancelled: 'bg-red-100 text-red-700'
   };
@@ -226,7 +227,7 @@ export default function InvoiceDetail() {
         <button onClick={sendWhatsApp} className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
           <MessageCircle size={18} /> Send WhatsApp
         </button>
-        {invoice.status === 'pending' && (
+        {['pending', 'partial'].includes(invoice.status) && (
           <button onClick={() => setShowPaymentModal(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
             <DollarSign size={18} /> Add Payment
           </button>
@@ -236,7 +237,7 @@ export default function InvoiceDetail() {
             <Receipt size={18} /> Download Receipt
           </button>
         )}
-        {invoice.status === 'pending' && (
+        {['pending', 'partial'].includes(invoice.status) && (
           <button onClick={cancelInvoice} className="flex items-center gap-2 px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50">
             Cancel
           </button>
@@ -416,7 +417,7 @@ export default function InvoiceDetail() {
       </div>
 
       {/* Payment Summary & History */}
-      {(payments.length > 0 || invoice.status === 'pending') && (
+      {(payments.length > 0 || ['pending', 'partial'].includes(invoice.status)) && (
         <div className="bg-white rounded-xl shadow-sm p-6">
           <h2 className="font-semibold mb-4 flex items-center gap-2">
             <DollarSign size={18} /> Payment Summary
@@ -434,7 +435,7 @@ export default function InvoiceDetail() {
                 style={{ width: `${Math.min(100, ((parseFloat(invoice.amount_paid) || 0) / parseFloat(invoice.total)) * 100)}%` }}
               />
             </div>
-            {invoice.status === 'pending' && getBalanceDue() > 0 && (
+            {['pending', 'partial'].includes(invoice.status) && getBalanceDue() > 0 && (
               <p className="text-sm text-orange-600 mt-2">
                 Balance due: Rs. {getBalanceDue().toLocaleString()}
               </p>
@@ -455,7 +456,7 @@ export default function InvoiceDetail() {
                         {payment.notes && ` • ${payment.notes}`}
                       </p>
                     </div>
-                    {invoice.status === 'pending' && (
+                    {['pending', 'partial'].includes(invoice.status) && (
                       <button 
                         onClick={() => deletePayment(payment.id)}
                         className="p-1 text-red-500 hover:bg-red-50 rounded"
