@@ -69,7 +69,7 @@ router.get('/', authenticate, async (req, res) => {
   }
 });
 
-// Get single invoice with items
+// Get single invoice with items and packages
 router.get('/:id', authenticate, async (req, res) => {
   try {
     const { data: invoice } = await supabase
@@ -86,20 +86,39 @@ router.get('/:id', authenticate, async (req, res) => {
       return res.status(404).json({ error: 'Invoice not found' });
     }
     
+    // Get packages for this invoice
+    const { data: packages } = await supabase
+      .from('invoice_packages')
+      .select('*')
+      .eq('invoice_id', req.params.id)
+      .order('id');
+    
+    // Get all items for this invoice
     const { data: items } = await supabase
       .from('invoice_items')
       .select(`
         *,
         categories (name),
-        vendors (name)
+        vendors (name),
+        products (name, cost_price, retail_price)
       `)
       .eq('invoice_id', req.params.id);
     
     const formattedItems = (items || []).map(item => ({
       ...item,
       category_name: item.categories?.name,
-      vendor_name: item.vendors?.name
+      vendor_name: item.vendors?.name,
+      product_name: item.products?.name
     }));
+    
+    // Group items by package
+    const packagesWithItems = (packages || []).map(pkg => ({
+      ...pkg,
+      items: formattedItems.filter(item => item.package_id === pkg.id)
+    }));
+    
+    // Items without package (legacy or standalone)
+    const standaloneItems = formattedItems.filter(item => !item.package_id);
     
     res.json({
       ...invoice,
@@ -109,20 +128,46 @@ router.get('/:id', authenticate, async (req, res) => {
       recipient_name: invoice.recipients?.name,
       recipient_phone: invoice.recipients?.phone,
       recipient_address: invoice.recipients?.address,
-      items: formattedItems
+      packages: packagesWithItems,
+      items: standaloneItems, // For backward compatibility
+      all_items: formattedItems // All items flat
     });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
   }
 });
 
-// Create invoice
+// Create invoice (supports both legacy items and new package-based)
 router.post('/', authenticate, async (req, res) => {
   try {
-    const { customer_id, recipient_id, items, discount, notes, delivery_zone_id, delivery_fee, gift_message } = req.body;
+    const { customer_id, recipient_id, items, packages, discount, notes, delivery_zone_id, delivery_fee, gift_message } = req.body;
     
-    const subtotal = items.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
+    let subtotal = 0;
+    let totalCost = 0;
+    let totalPackagingCost = 0;
+    
+    // Calculate totals from packages if provided
+    if (packages && packages.length > 0) {
+      packages.forEach(pkg => {
+        subtotal += parseFloat(pkg.package_price) || 0;
+        totalPackagingCost += parseFloat(pkg.packaging_cost) || 0;
+        // Sum up item costs
+        (pkg.items || []).forEach(item => {
+          totalCost += (parseFloat(item.cost_price) || 0) * (item.quantity || 1);
+        });
+      });
+      totalCost += totalPackagingCost;
+    } else if (items && items.length > 0) {
+      // Legacy: calculate from items directly
+      subtotal = items.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
+      totalCost = items.reduce((sum, item) => sum + ((item.cost_price || 0) * item.quantity), 0);
+    }
+    
     const total = subtotal - (discount || 0) + (delivery_fee || 0);
+    const profit = total - totalCost - (delivery_fee || 0); // Exclude delivery fee from profit calc
+    const profitMargin = total > 0 ? (profit / total) * 100 : 0;
+    const markupPercentage = totalCost > 0 ? (profit / totalCost) * 100 : 0;
+    
     const invoice_number = await generateInvoiceNumber();
     
     const { data: invoice, error: invoiceError } = await supabase
@@ -134,6 +179,10 @@ router.post('/', authenticate, async (req, res) => {
         subtotal,
         discount: discount || 0,
         total,
+        total_cost: totalCost,
+        total_packaging_cost: totalPackagingCost,
+        profit_margin: profitMargin,
+        markup_percentage: markupPercentage,
         notes,
         delivery_zone_id: delivery_zone_id || null,
         delivery_fee: delivery_fee || 0,
@@ -145,20 +194,62 @@ router.post('/', authenticate, async (req, res) => {
     
     if (invoiceError) throw invoiceError;
     
-    const invoiceItems = items.map(item => ({
-      invoice_id: invoice.id,
-      category_id: item.category_id || null,
-      vendor_id: item.vendor_id || null,
-      description: item.description,
-      quantity: item.quantity,
-      unit_price: item.unit_price,
-      total: item.quantity * item.unit_price
-    }));
-    
-    await supabase.from('invoice_items').insert(invoiceItems);
+    // Insert packages and their items
+    if (packages && packages.length > 0) {
+      for (const pkg of packages) {
+        const { data: packageData, error: pkgError } = await supabase
+          .from('invoice_packages')
+          .insert({
+            invoice_id: invoice.id,
+            package_name: pkg.package_name,
+            package_price: pkg.package_price,
+            packaging_cost: pkg.packaging_cost || 0,
+            notes: pkg.notes || null
+          })
+          .select()
+          .single();
+        
+        if (pkgError) throw pkgError;
+        
+        // Insert items for this package
+        if (pkg.items && pkg.items.length > 0) {
+          const packageItems = pkg.items.map(item => ({
+            invoice_id: invoice.id,
+            package_id: packageData.id,
+            product_id: item.product_id || null,
+            category_id: item.category_id || null,
+            vendor_id: item.vendor_id || null,
+            description: item.description,
+            quantity: item.quantity || 1,
+            unit_price: item.unit_price || 0,
+            cost_price: item.cost_price || 0,
+            total: (item.quantity || 1) * (item.unit_price || 0)
+          }));
+          
+          await supabase.from('invoice_items').insert(packageItems);
+        }
+      }
+    } else if (items && items.length > 0) {
+      // Legacy: insert items without package
+      const invoiceItems = items.map(item => ({
+        invoice_id: invoice.id,
+        package_id: null,
+        product_id: item.product_id || null,
+        category_id: item.category_id || null,
+        vendor_id: item.vendor_id || null,
+        description: item.description,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        cost_price: item.cost_price || 0,
+        total: item.quantity * item.unit_price
+      }));
+      
+      await supabase.from('invoice_items').insert(invoiceItems);
+    }
     
     res.json({ id: invoice.id, invoice_number });
   } catch (err) {
+    console.error('Invoice creation error:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });

@@ -22,7 +22,7 @@ export default function Receipts() {
     try {
       const invRes = await api.get(`/invoices/${receipt.invoice_id}`);
       const invoice = invRes.data;
-      const doc = generateReceiptPDF(receipt, invoice, invoice.items, settings);
+      const doc = await generateReceiptPDF(receipt, invoice, invoice.items, settings);
       doc.save(`${receipt.receipt_number}.pdf`);
     } catch (err) {
       alert('Error generating PDF');

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../api';
-import { ArrowLeft, Download, MessageCircle, Receipt, Trash2, CheckCircle, Package, Truck, Gift, Camera, DollarSign, Plus, X } from 'lucide-react';
-import { generateInvoicePDF, generateReceiptPDF } from '../utils/pdfGenerator';
+import { ArrowLeft, Download, MessageCircle, Receipt, Trash2, CheckCircle, Package, Truck, Gift, Camera, DollarSign, Plus, X, TrendingUp, Box } from 'lucide-react';
+import { generateInvoicePDF, generateReceiptPDF, generateCustomerInvoicePDF } from '../utils/pdfGenerator';
 
 export default function InvoiceDetail() {
   const { id } = useParams();
@@ -35,14 +35,19 @@ export default function InvoiceDetail() {
 
   useEffect(() => { fetchInvoice(); }, [id]);
 
-  const downloadPDF = () => {
-    const doc = generateInvoicePDF(invoice, settings);
+  const downloadPDF = async () => {
+    const doc = await generateInvoicePDF(invoice, settings);
     doc.save(`${invoice.invoice_number}.pdf`);
   };
 
-  const downloadReceiptPDF = () => {
+  const downloadCustomerPDF = async () => {
+    const doc = await generateCustomerInvoicePDF(invoice, settings);
+    doc.save(`${invoice.invoice_number}-customer.pdf`);
+  };
+
+  const downloadReceiptPDF = async () => {
     if (receipt) {
-      const doc = generateReceiptPDF(receipt, invoice, invoice.items, settings);
+      const doc = await generateReceiptPDF(receipt, invoice, invoice.all_items || invoice.items, settings);
       doc.save(`${receipt.receipt_number}.pdf`);
     }
   };
@@ -144,6 +149,7 @@ export default function InvoiceDetail() {
   ];
 
   const currentStatusIndex = orderStatusSteps.findIndex(s => s.key === invoice.order_status);
+  const hasPackages = invoice.packages && invoice.packages.length > 0;
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -158,6 +164,41 @@ export default function InvoiceDetail() {
           </span>
         </div>
       </div>
+
+      {/* Profitability Summary (Internal View) */}
+      {(invoice.total_cost > 0 || invoice.profit_margin > 0) && (
+        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4">
+          <h3 className="font-semibold text-green-800 mb-3 flex items-center gap-2">
+            <TrendingUp size={18} /> Profitability Analysis (Internal)
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 text-sm">
+            <div>
+              <span className="text-gray-600 block">Revenue</span>
+              <span className="text-purple-600 font-semibold">Rs. {parseFloat(invoice.total).toLocaleString()}</span>
+            </div>
+            <div>
+              <span className="text-gray-600 block">Total Cost</span>
+              <span className="text-red-600 font-semibold">Rs. {parseFloat(invoice.total_cost || 0).toLocaleString()}</span>
+            </div>
+            <div>
+              <span className="text-gray-600 block">Packaging Cost</span>
+              <span className="text-orange-600 font-semibold">Rs. {parseFloat(invoice.total_packaging_cost || 0).toLocaleString()}</span>
+            </div>
+            <div>
+              <span className="text-gray-600 block">Profit</span>
+              <span className={`font-semibold ${(parseFloat(invoice.total) - parseFloat(invoice.total_cost || 0)) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                Rs. {(parseFloat(invoice.total) - parseFloat(invoice.total_cost || 0) - parseFloat(invoice.delivery_fee || 0)).toLocaleString()}
+              </span>
+            </div>
+            <div>
+              <span className="text-gray-600 block">Margin / Markup</span>
+              <span className="text-green-600 font-semibold">
+                {parseFloat(invoice.profit_margin || 0).toFixed(1)}% / {parseFloat(invoice.markup_percentage || 0).toFixed(1)}%
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Order Status Tracker */}
       {invoice.status === 'paid' && (
@@ -222,8 +263,13 @@ export default function InvoiceDetail() {
       {/* Actions */}
       <div className="flex flex-wrap gap-2">
         <button onClick={downloadPDF} className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
-          <Download size={18} /> Download Invoice
+          <Download size={18} /> Internal Invoice
         </button>
+        {hasPackages && (
+          <button onClick={downloadCustomerPDF} className="flex items-center gap-2 px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700">
+            <Download size={18} /> Customer Invoice
+          </button>
+        )}
         <button onClick={sendWhatsApp} className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
           <MessageCircle size={18} /> Send WhatsApp
         </button>
@@ -358,31 +404,79 @@ export default function InvoiceDetail() {
           {invoice.delivered_at && <span className="ml-4">Delivered: {new Date(invoice.delivered_at).toLocaleString()}</span>}
         </div>
 
-        {/* Items Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="text-left p-3">Description</th>
-                <th className="text-left p-3">Category</th>
-                <th className="text-right p-3">Qty</th>
-                <th className="text-right p-3">Price</th>
-                <th className="text-right p-3">Total</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {invoice.items.map((item, i) => (
-                <tr key={i}>
-                  <td className="p-3">{item.description}</td>
-                  <td className="p-3 text-gray-500">{item.category_name || '-'}</td>
-                  <td className="p-3 text-right">{item.quantity}</td>
-                  <td className="p-3 text-right">Rs. {parseFloat(item.unit_price).toLocaleString()}</td>
-                  <td className="p-3 text-right">Rs. {parseFloat(item.total).toLocaleString()}</td>
+        {/* Packages View */}
+        {hasPackages ? (
+          <div className="space-y-4">
+            <h3 className="font-semibold">Packages</h3>
+            {invoice.packages.map((pkg, index) => (
+              <div key={pkg.id} className="border rounded-lg overflow-hidden">
+                <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <Gift className="text-purple-600" size={20} />
+                    <span className="font-medium">{pkg.package_name}</span>
+                  </div>
+                  <span className="font-bold text-purple-600">Rs. {parseFloat(pkg.package_price).toLocaleString()}</span>
+                </div>
+                <div className="p-4">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="text-left p-2">Item</th>
+                        <th className="text-right p-2">Qty</th>
+                        <th className="text-right p-2 text-red-600">Cost</th>
+                        <th className="text-right p-2 text-green-600">Retail</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {pkg.items.map((item, i) => (
+                        <tr key={i}>
+                          <td className="p-2">{item.description}</td>
+                          <td className="p-2 text-right">{item.quantity}</td>
+                          <td className="p-2 text-right text-red-600">Rs. {parseFloat(item.cost_price || 0).toLocaleString()}</td>
+                          <td className="p-2 text-right text-green-600">Rs. {parseFloat(item.unit_price || 0).toLocaleString()}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {pkg.packaging_cost > 0 && (
+                    <div className="mt-2 pt-2 border-t flex justify-between text-sm">
+                      <span className="flex items-center gap-1 text-orange-600">
+                        <Box size={14} /> Packaging Cost
+                      </span>
+                      <span className="text-orange-600">Rs. {parseFloat(pkg.packaging_cost).toLocaleString()}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          /* Legacy Items Table */
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="text-left p-3">Description</th>
+                  <th className="text-left p-3">Category</th>
+                  <th className="text-right p-3">Qty</th>
+                  <th className="text-right p-3">Price</th>
+                  <th className="text-right p-3">Total</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y">
+                {(invoice.items || []).map((item, i) => (
+                  <tr key={i}>
+                    <td className="p-3">{item.description}</td>
+                    <td className="p-3 text-gray-500">{item.category_name || '-'}</td>
+                    <td className="p-3 text-right">{item.quantity}</td>
+                    <td className="p-3 text-right">Rs. {parseFloat(item.unit_price).toLocaleString()}</td>
+                    <td className="p-3 text-right">Rs. {parseFloat(item.total).toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
         {/* Totals */}
         <div className="border-t mt-4 pt-4 space-y-2">

@@ -4,14 +4,21 @@ import { authenticate, adminOnly } from '../middleware/auth.js';
 
 const router = Router();
 
-// Get all products
+// Get all products (with optional type filter)
 router.get('/', authenticate, async (req, res) => {
   try {
-    const { data } = await supabase
+    const { type } = req.query; // 'product', 'packaging', or undefined for all
+    
+    let query = supabase
       .from('products')
       .select(`*, categories (name)`)
-      .eq('is_active', true)
-      .order('name');
+      .eq('is_active', true);
+    
+    if (type) {
+      query = query.eq('product_type', type);
+    }
+    
+    const { data } = await query.order('product_type').order('name');
     
     const products = (data || []).map(p => ({
       ...p,
@@ -27,11 +34,19 @@ router.get('/', authenticate, async (req, res) => {
 // Create product
 router.post('/', authenticate, async (req, res) => {
   try {
-    const { name, description, category_id, price } = req.body;
+    const { name, description, category_id, cost_price, retail_price, product_type } = req.body;
     
     const { data, error } = await supabase
       .from('products')
-      .insert({ name, description, category_id, price })
+      .insert({ 
+        name, 
+        description, 
+        category_id: category_id || null,
+        cost_price: cost_price || 0,
+        retail_price: retail_price || 0,
+        price: retail_price || 0, // Keep price for backward compatibility
+        product_type: product_type || 'product'
+      })
       .select()
       .single();
     
@@ -45,11 +60,20 @@ router.post('/', authenticate, async (req, res) => {
 // Update product
 router.put('/:id', authenticate, async (req, res) => {
   try {
-    const { name, description, category_id, price, is_active } = req.body;
+    const { name, description, category_id, cost_price, retail_price, product_type, is_active } = req.body;
     
     const { data, error } = await supabase
       .from('products')
-      .update({ name, description, category_id, price, is_active })
+      .update({ 
+        name, 
+        description, 
+        category_id: category_id || null,
+        cost_price: cost_price || 0,
+        retail_price: retail_price || 0,
+        price: retail_price || 0,
+        product_type: product_type || 'product',
+        is_active 
+      })
       .eq('id', req.params.id)
       .select()
       .single();

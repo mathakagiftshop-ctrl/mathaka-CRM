@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import api from '../api';
-import { BarChart3, Users, TrendingUp, Globe, MessageCircle } from 'lucide-react';
+import { BarChart3, Users, TrendingUp, Globe, MessageCircle, DollarSign, Percent } from 'lucide-react';
 
 export default function Reports() {
   const [salesData, setSalesData] = useState(null);
+  const [profitData, setProfitData] = useState(null);
   const [inactiveCustomers, setInactiveCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('sales');
@@ -11,11 +12,23 @@ export default function Reports() {
   useEffect(() => {
     Promise.all([
       api.get('/reports/sales'),
+      api.get('/reports/profitability'),
       api.get('/reports/inactive-customers?days=60')
-    ]).then(([sales, inactive]) => {
+    ]).then(([sales, profit, inactive]) => {
       setSalesData(sales.data);
+      setProfitData(profit.data);
       setInactiveCustomers(inactive.data);
       setLoading(false);
+    }).catch(() => {
+      // If profitability endpoint doesn't exist yet, continue without it
+      Promise.all([
+        api.get('/reports/sales'),
+        api.get('/reports/inactive-customers?days=60')
+      ]).then(([sales, inactive]) => {
+        setSalesData(sales.data);
+        setInactiveCustomers(inactive.data);
+        setLoading(false);
+      });
     });
   }, []);
 
@@ -33,16 +46,22 @@ export default function Reports() {
       </h1>
 
       {/* Tabs */}
-      <div className="flex gap-2 border-b">
+      <div className="flex gap-2 border-b overflow-x-auto">
         <button
           onClick={() => setActiveTab('sales')}
-          className={`px-4 py-2 font-medium ${activeTab === 'sales' ? 'text-purple-600 border-b-2 border-purple-600' : 'text-gray-500'}`}
+          className={`px-4 py-2 font-medium whitespace-nowrap ${activeTab === 'sales' ? 'text-purple-600 border-b-2 border-purple-600' : 'text-gray-500'}`}
         >
           Sales Report
         </button>
         <button
+          onClick={() => setActiveTab('profitability')}
+          className={`px-4 py-2 font-medium whitespace-nowrap ${activeTab === 'profitability' ? 'text-purple-600 border-b-2 border-purple-600' : 'text-gray-500'}`}
+        >
+          Profitability
+        </button>
+        <button
           onClick={() => setActiveTab('customers')}
-          className={`px-4 py-2 font-medium ${activeTab === 'customers' ? 'text-purple-600 border-b-2 border-purple-600' : 'text-gray-500'}`}
+          className={`px-4 py-2 font-medium whitespace-nowrap ${activeTab === 'customers' ? 'text-purple-600 border-b-2 border-purple-600' : 'text-gray-500'}`}
         >
           Customer Insights
         </button>
@@ -149,6 +168,107 @@ export default function Reports() {
               </table>
             </div>
           </div>
+        </div>
+      )}
+
+      {activeTab === 'profitability' && profitData && (
+        <div className="space-y-6">
+          {/* Summary Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-white rounded-xl shadow-sm p-4">
+              <div className="flex items-center gap-2 text-gray-500 mb-1">
+                <DollarSign size={16} />
+                <span className="text-sm">Total Revenue</span>
+              </div>
+              <p className="text-xl font-bold text-purple-600">Rs. {profitData.summary.totalRevenue.toLocaleString()}</p>
+            </div>
+            <div className="bg-white rounded-xl shadow-sm p-4">
+              <div className="flex items-center gap-2 text-gray-500 mb-1">
+                <DollarSign size={16} />
+                <span className="text-sm">Total Cost</span>
+              </div>
+              <p className="text-xl font-bold text-red-600">Rs. {profitData.summary.totalCost.toLocaleString()}</p>
+            </div>
+            <div className="bg-white rounded-xl shadow-sm p-4">
+              <div className="flex items-center gap-2 text-gray-500 mb-1">
+                <TrendingUp size={16} />
+                <span className="text-sm">Total Profit</span>
+              </div>
+              <p className={`text-xl font-bold ${profitData.summary.totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                Rs. {profitData.summary.totalProfit.toLocaleString()}
+              </p>
+            </div>
+            <div className="bg-white rounded-xl shadow-sm p-4">
+              <div className="flex items-center gap-2 text-gray-500 mb-1">
+                <Percent size={16} />
+                <span className="text-sm">Avg Margin</span>
+              </div>
+              <p className={`text-xl font-bold ${profitData.summary.avgMargin >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {profitData.summary.avgMargin.toFixed(1)}%
+              </p>
+            </div>
+          </div>
+
+          {/* Monthly Profitability */}
+          <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
+            <h2 className="font-semibold mb-4 flex items-center gap-2">
+              <TrendingUp size={18} /> Monthly Profitability
+            </h2>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="text-left p-3">Month</th>
+                    <th className="text-right p-3">Revenue</th>
+                    <th className="text-right p-3">Cost</th>
+                    <th className="text-right p-3">Profit</th>
+                    <th className="text-right p-3">Margin</th>
+                    <th className="text-right p-3">Markup</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {profitData.monthly.map(m => (
+                    <tr key={m.month}>
+                      <td className="p-3 font-medium">{m.month}</td>
+                      <td className="p-3 text-right">Rs. {m.revenue.toLocaleString()}</td>
+                      <td className="p-3 text-right text-red-600">Rs. {m.cost.toLocaleString()}</td>
+                      <td className={`p-3 text-right font-medium ${m.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        Rs. {m.profit.toLocaleString()}
+                      </td>
+                      <td className={`p-3 text-right ${m.margin >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {m.margin.toFixed(1)}%
+                      </td>
+                      <td className={`p-3 text-right ${m.markup >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {m.markup.toFixed(1)}%
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Packaging Cost Analysis */}
+          {profitData.packagingCosts && profitData.packagingCosts.length > 0 && (
+            <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
+              <h2 className="font-semibold mb-4">Packaging Cost Analysis</h2>
+              <div className="space-y-3">
+                {profitData.packagingCosts.map(p => (
+                  <div key={p.month} className="flex justify-between items-center">
+                    <span>{p.month}</span>
+                    <span className="text-orange-600 font-medium">Rs. {p.cost.toLocaleString()}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'profitability' && !profitData && (
+        <div className="bg-white rounded-xl shadow-sm p-8 text-center">
+          <TrendingUp size={48} className="mx-auto text-gray-300 mb-4" />
+          <p className="text-gray-500">Profitability data will appear here once you start creating orders with cost tracking.</p>
         </div>
       )}
 

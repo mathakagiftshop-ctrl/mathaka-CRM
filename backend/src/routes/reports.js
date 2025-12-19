@@ -79,6 +79,81 @@ router.get('/sales', authenticate, async (req, res) => {
   }
 });
 
+// Profitability report
+router.get('/profitability', authenticate, async (req, res) => {
+  try {
+    const { data: invoices } = await supabase
+      .from('invoices')
+      .select('id, total, total_cost, total_packaging_cost, profit_margin, markup_percentage, created_at, paid_at, status')
+      .eq('status', 'paid');
+    
+    // Monthly profitability
+    const monthlyData = {};
+    let totalRevenue = 0;
+    let totalCost = 0;
+    let totalPackagingCost = 0;
+    
+    (invoices || []).forEach(inv => {
+      const month = inv.paid_at ? inv.paid_at.substring(0, 7) : inv.created_at.substring(0, 7);
+      const revenue = parseFloat(inv.total) || 0;
+      const cost = parseFloat(inv.total_cost) || 0;
+      const packagingCost = parseFloat(inv.total_packaging_cost) || 0;
+      
+      if (!monthlyData[month]) {
+        monthlyData[month] = { revenue: 0, cost: 0, packagingCost: 0, orders: 0 };
+      }
+      monthlyData[month].revenue += revenue;
+      monthlyData[month].cost += cost;
+      monthlyData[month].packagingCost += packagingCost;
+      monthlyData[month].orders += 1;
+      
+      totalRevenue += revenue;
+      totalCost += cost;
+      totalPackagingCost += packagingCost;
+    });
+    
+    const totalProfit = totalRevenue - totalCost;
+    const avgMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
+    const avgMarkup = totalCost > 0 ? (totalProfit / totalCost) * 100 : 0;
+    
+    const monthly = Object.entries(monthlyData)
+      .map(([month, data]) => {
+        const profit = data.revenue - data.cost;
+        return {
+          month,
+          revenue: data.revenue,
+          cost: data.cost,
+          profit,
+          margin: data.revenue > 0 ? (profit / data.revenue) * 100 : 0,
+          markup: data.cost > 0 ? (profit / data.cost) * 100 : 0,
+          orders: data.orders
+        };
+      })
+      .sort((a, b) => a.month.localeCompare(b.month));
+    
+    const packagingCosts = Object.entries(monthlyData)
+      .filter(([_, data]) => data.packagingCost > 0)
+      .map(([month, data]) => ({ month, cost: data.packagingCost }))
+      .sort((a, b) => a.month.localeCompare(b.month));
+    
+    res.json({
+      summary: {
+        totalRevenue,
+        totalCost,
+        totalProfit,
+        totalPackagingCost,
+        avgMargin,
+        avgMarkup
+      },
+      monthly,
+      packagingCosts
+    });
+  } catch (err) {
+    console.error('Profitability report error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // Inactive customers (haven't ordered in X days)
 router.get('/inactive-customers', authenticate, async (req, res) => {
   try {
