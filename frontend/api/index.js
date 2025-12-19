@@ -333,9 +333,9 @@ export default async function handler(req, res) {
       const { data: revenueData } = await supabase.from('invoices').select('amount_paid').in('status', ['paid', 'partial']);
       const totalRevenue = (revenueData || []).reduce((sum, inv) => sum + (parseFloat(inv.amount_paid) || 0), 0);
       const startOfMonth = new Date(); startOfMonth.setDate(1); startOfMonth.setHours(0, 0, 0, 0);
-      // This month revenue from payments table
-      const { data: monthPayments } = await supabase.from('payments').select('amount').gte('payment_date', startOfMonth.toISOString());
-      const thisMonthRevenue = (monthPayments || []).reduce((sum, p) => sum + parseFloat(p.amount), 0);
+      // This month revenue from paid invoices
+      const { data: monthRevenueData } = await supabase.from('invoices').select('total').eq('status', 'paid').gte('paid_at', startOfMonth.toISOString());
+      const thisMonthRevenue = (monthRevenueData || []).reduce((sum, inv) => sum + parseFloat(inv.total), 0);
       const { data: recentInvoicesData } = await supabase.from('invoices').select(`id, invoice_number, total, status, created_at, customers (name)`).order('created_at', { ascending: false }).limit(5);
       const recentInvoices = (recentInvoicesData || []).map(inv => ({ ...inv, customer_name: inv.customers?.name }));
       const today = new Date();
