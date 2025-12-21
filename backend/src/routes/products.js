@@ -34,7 +34,7 @@ router.get('/', authenticate, async (req, res) => {
 // Create product
 router.post('/', authenticate, async (req, res) => {
   try {
-    const { name, description, category_id, cost_price, retail_price, product_type } = req.body;
+    const { name, description, category_id, cost_price, price, product_type } = req.body;
     
     const { data, error } = await supabase
       .from('products')
@@ -43,24 +43,27 @@ router.post('/', authenticate, async (req, res) => {
         description, 
         category_id: category_id || null,
         cost_price: cost_price || 0,
-        retail_price: retail_price || 0,
-        price: retail_price || 0, // Keep price for backward compatibility
+        price: price || 0,
         product_type: product_type || 'product'
       })
       .select()
       .single();
     
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase error creating product:', error);
+      return res.status(500).json({ error: error.message || 'Database error' });
+    }
     res.json(data);
   } catch (err) {
-    res.status(500).json({ error: 'Server error' });
+    console.error('Error creating product:', err);
+    res.status(500).json({ error: err.message || 'Server error' });
   }
 });
 
 // Update product
 router.put('/:id', authenticate, async (req, res) => {
   try {
-    const { name, description, category_id, cost_price, retail_price, product_type, is_active } = req.body;
+    const { name, description, category_id, cost_price, price, product_type, is_active } = req.body;
     
     const { data, error } = await supabase
       .from('products')
@@ -69,8 +72,7 @@ router.put('/:id', authenticate, async (req, res) => {
         description, 
         category_id: category_id || null,
         cost_price: cost_price || 0,
-        retail_price: retail_price || 0,
-        price: retail_price || 0,
+        price: price || 0,
         product_type: product_type || 'product',
         is_active 
       })

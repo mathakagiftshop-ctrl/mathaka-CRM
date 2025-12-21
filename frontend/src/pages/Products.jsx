@@ -13,7 +13,6 @@ export default function Products() {
     description: '', 
     category_id: '', 
     cost_price: '', 
-    retail_price: '',
     product_type: 'product'
   });
   const [loading, setLoading] = useState(true);
@@ -31,23 +30,35 @@ export default function Products() {
 
   useEffect(() => { fetchData(); }, []);
 
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSubmitting(true);
+    setError('');
+    
     const payload = {
       ...form,
-      cost_price: parseFloat(form.cost_price) || 0,
-      retail_price: parseFloat(form.retail_price) || 0
+      cost_price: parseFloat(form.cost_price) || 0
     };
     
-    if (editingId) {
-      await api.put(`/products/${editingId}`, payload);
-    } else {
-      await api.post('/products', payload);
+    try {
+      if (editingId) {
+        await api.put(`/products/${editingId}`, payload);
+      } else {
+        await api.post('/products', payload);
+      }
+      setShowModal(false);
+      setEditingId(null);
+      setForm({ name: '', description: '', category_id: '', cost_price: '', product_type: 'product' });
+      fetchData();
+    } catch (err) {
+      console.error('Product save error:', err);
+      setError(err.response?.data?.error || 'Failed to save product. Please try again.');
+    } finally {
+      setSubmitting(false);
     }
-    setShowModal(false);
-    setEditingId(null);
-    setForm({ name: '', description: '', category_id: '', cost_price: '', retail_price: '', product_type: 'product' });
-    fetchData();
   };
 
   const handleEdit = (product) => {
@@ -56,7 +67,6 @@ export default function Products() {
       description: product.description || '',
       category_id: product.category_id || '',
       cost_price: product.cost_price || '',
-      retail_price: product.retail_price || '',
       product_type: product.product_type || 'product'
     });
     setEditingId(product.id);
@@ -76,24 +86,14 @@ export default function Products() {
       description: '', 
       category_id: '', 
       cost_price: '', 
-      retail_price: '',
       product_type: type
     });
     setEditingId(null);
+    setError('');
     setShowModal(true);
   };
 
   const filteredProducts = products.filter(p => p.product_type === activeTab);
-
-  const calculateMargin = (cost, retail) => {
-    if (!retail || retail === 0) return 0;
-    return ((retail - cost) / retail * 100).toFixed(1);
-  };
-
-  const calculateMarkup = (cost, retail) => {
-    if (!cost || cost === 0) return 0;
-    return ((retail - cost) / cost * 100).toFixed(1);
-  };
 
   return (
     <div className="space-y-4">
@@ -159,24 +159,10 @@ export default function Products() {
               </div>
               <div className="flex items-center gap-4">
                 <div className="text-right">
-                  <div className="flex items-center gap-3">
-                    <div className="text-sm">
-                      <span className="text-gray-500">Cost:</span>
-                      <span className="ml-1 text-red-600">Rs. {parseFloat(product.cost_price || 0).toLocaleString()}</span>
-                    </div>
-                    {product.product_type === 'product' && (
-                      <div className="text-sm">
-                        <span className="text-gray-500">Retail:</span>
-                        <span className="ml-1 text-green-600 font-semibold">Rs. {parseFloat(product.retail_price || 0).toLocaleString()}</span>
-                      </div>
-                    )}
+                  <div className="text-sm">
+                    <span className="text-gray-500">Cost:</span>
+                    <span className="ml-1 text-red-600 font-semibold">Rs. {parseFloat(product.cost_price || 0).toLocaleString()}</span>
                   </div>
-                  {product.product_type === 'product' && product.cost_price > 0 && product.retail_price > 0 && (
-                    <div className="text-xs text-gray-400 mt-1">
-                      Margin: {calculateMargin(product.cost_price, product.retail_price)}% | 
-                      Markup: {calculateMarkup(product.cost_price, product.retail_price)}%
-                    </div>
-                  )}
                 </div>
                 <button onClick={() => handleEdit(product)} className="p-2 text-gray-500 hover:text-purple-600">
                   <Edit2 size={18} />
@@ -197,6 +183,11 @@ export default function Products() {
               {editingId ? 'Edit' : 'Add'} {form.product_type === 'product' ? 'Product' : 'Packaging Material'}
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {error && (
+                <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+                  {error}
+                </div>
+              )}
               <input
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -216,7 +207,7 @@ export default function Products() {
                 </select>
               )}
               
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Cost Price (Rs.)</label>
                   <input
@@ -229,40 +220,7 @@ export default function Products() {
                     step="0.01"
                   />
                 </div>
-                {form.product_type === 'product' && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Retail Price (Rs.)</label>
-                    <input
-                      type="number"
-                      value={form.retail_price}
-                      onChange={(e) => setForm({ ...form, retail_price: e.target.value })}
-                      placeholder="0"
-                      className="w-full px-3 py-2 border rounded-lg"
-                      min="0"
-                      step="0.01"
-                    />
-                  </div>
-                )}
               </div>
-              
-              {form.product_type === 'product' && form.cost_price && form.retail_price && (
-                <div className="p-3 bg-gray-50 rounded-lg text-sm">
-                  <div className="flex justify-between">
-                    <span>Profit per unit:</span>
-                    <span className="font-medium text-green-600">
-                      Rs. {(parseFloat(form.retail_price || 0) - parseFloat(form.cost_price || 0)).toLocaleString()}
-                    </span>
-                  </div>
-                  <div className="flex justify-between mt-1">
-                    <span>Margin:</span>
-                    <span>{calculateMargin(form.cost_price, form.retail_price)}%</span>
-                  </div>
-                  <div className="flex justify-between mt-1">
-                    <span>Markup:</span>
-                    <span>{calculateMarkup(form.cost_price, form.retail_price)}%</span>
-                  </div>
-                </div>
-              )}
               
               <textarea
                 value={form.description}
@@ -273,11 +231,11 @@ export default function Products() {
               />
               
               <div className="flex gap-2 justify-end">
-                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 border rounded-lg">
+                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 border rounded-lg" disabled={submitting}>
                   Cancel
                 </button>
-                <button type="submit" className="px-4 py-2 bg-purple-600 text-white rounded-lg">
-                  {editingId ? 'Update' : 'Add'}
+                <button type="submit" className="px-4 py-2 bg-purple-600 text-white rounded-lg disabled:opacity-50" disabled={submitting}>
+                  {submitting ? 'Saving...' : (editingId ? 'Update' : 'Add')}
                 </button>
               </div>
             </form>

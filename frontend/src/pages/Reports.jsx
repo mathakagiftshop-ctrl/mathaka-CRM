@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../api';
-import { BarChart3, Users, TrendingUp, Globe, MessageCircle, DollarSign, Percent } from 'lucide-react';
+import { BarChart3, Users, TrendingUp, Globe, MessageCircle, DollarSign, Percent, Download } from 'lucide-react';
+import { exportSalesReport, exportProfitabilityReport, exportTopCustomers, downloadCSV } from '../utils/exportHelpers';
 
 export default function Reports() {
   const [salesData, setSalesData] = useState(null);
@@ -71,9 +72,17 @@ export default function Reports() {
         <div className="space-y-6">
           {/* Monthly Revenue */}
           <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
-            <h2 className="font-semibold mb-4 flex items-center gap-2">
-              <TrendingUp size={18} /> Monthly Revenue
-            </h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="font-semibold flex items-center gap-2">
+                <TrendingUp size={18} /> Monthly Revenue
+              </h2>
+              <button
+                onClick={() => exportSalesReport(salesData)}
+                className="flex items-center gap-1 px-3 py-1 text-sm bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100"
+              >
+                <Download size={14} /> Export
+              </button>
+            </div>
             <div className="space-y-3">
               {salesData.monthly.slice(-6).map(m => (
                 <div key={m.month} className="space-y-1">
@@ -82,7 +91,7 @@ export default function Reports() {
                     <span className="font-medium">Rs. {m.revenue.toLocaleString()} <span className="text-gray-400">({m.orders})</span></span>
                   </div>
                   <div className="bg-gray-100 rounded-full h-4 overflow-hidden">
-                    <div 
+                    <div
                       className="bg-purple-500 h-full rounded-full transition-all"
                       style={{ width: `${Math.min((m.revenue / Math.max(...salesData.monthly.map(x => x.revenue))) * 100, 100)}%` }}
                     />
@@ -211,9 +220,17 @@ export default function Reports() {
 
           {/* Monthly Profitability */}
           <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
-            <h2 className="font-semibold mb-4 flex items-center gap-2">
-              <TrendingUp size={18} /> Monthly Profitability
-            </h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="font-semibold flex items-center gap-2">
+                <TrendingUp size={18} /> Monthly Profitability
+              </h2>
+              <button
+                onClick={() => exportProfitabilityReport(profitData)}
+                className="flex items-center gap-1 px-3 py-1 text-sm bg-green-50 text-green-600 rounded-lg hover:bg-green-100"
+              >
+                <Download size={14} /> Export
+              </button>
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-gray-50">

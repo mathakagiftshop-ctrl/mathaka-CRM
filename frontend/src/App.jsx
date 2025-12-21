@@ -19,6 +19,7 @@ import Expenses from './pages/Expenses';
 import Reports from './pages/Reports';
 import DeliveryZones from './pages/DeliveryZones';
 import ActivityLog from './pages/ActivityLog';
+import PackageAssistant from './pages/PackageAssistant';
 import InstallPrompt from './components/InstallPrompt';
 
 const AuthContext = createContext(null);
@@ -89,6 +90,7 @@ export default function App() {
             <Route path="expenses" element={<Expenses />} />
             <Route path="important-dates" element={<ImportantDates />} />
             <Route path="reports" element={<Reports />} />
+            <Route path="package-assistant" element={<PackageAssistant />} />
             <Route path="delivery-zones" element={<AdminRoute><DeliveryZones /></AdminRoute>} />
             <Route path="activity-log" element={<AdminRoute><ActivityLog /></AdminRoute>} />
             <Route path="settings" element={<AdminRoute><Settings /></AdminRoute>} />

@@ -16,10 +16,10 @@ async function generateInvoiceNumber() {
     .select('value')
     .eq('key', 'invoice_prefix')
     .single();
-  
+
   const prefix = prefixSetting?.value || 'INV';
   const year = new Date().getFullYear();
-  
+
   const { data: lastInvoice } = await supabase
     .from('invoices')
     .select('invoice_number')
@@ -27,21 +27,21 @@ async function generateInvoiceNumber() {
     .order('id', { ascending: false })
     .limit(1)
     .single();
-  
+
   let nextNum = 1;
   if (lastInvoice) {
     const parts = lastInvoice.invoice_number.split('-');
     nextNum = parseInt(parts[2]) + 1;
   }
-  
+
   return `${prefix}-${year}-${String(nextNum).padStart(4, '0')}`;
 }
 
 // Get all invoices
 router.get('/', authenticate, async (req, res) => {
   try {
-    const { status, customer_id, order_status } = req.query;
-    
+    const { status, customer_id, order_status, search, dateFrom, dateTo } = req.query;
+
     let query = supabase
       .from('invoices')
       .select(`
@@ -49,23 +49,37 @@ router.get('/', authenticate, async (req, res) => {
         customers (name, whatsapp),
         delivery_zones (name, delivery_fee)
       `);
-    
+
     if (status) query = query.eq('status', status);
     if (customer_id) query = query.eq('customer_id', customer_id);
     if (order_status) query = query.eq('order_status', order_status);
-    
+
+    // Date range filtering
+    if (dateFrom) query = query.gte('created_at', `${dateFrom}T00:00:00`);
+    if (dateTo) query = query.lte('created_at', `${dateTo}T23:59:59`);
+
     const { data } = await query.order('created_at', { ascending: false });
-    
-    const invoices = (data || []).map(inv => ({
+
+    let invoices = (data || []).map(inv => ({
       ...inv,
       customer_name: inv.customers?.name,
       customer_whatsapp: inv.customers?.whatsapp,
       delivery_zone_name: inv.delivery_zones?.name
     }));
-    
+
+    // Search filtering (client-side for flexibility)
+    if (search) {
+      const searchLower = search.toLowerCase();
+      invoices = invoices.filter(inv =>
+        inv.invoice_number?.toLowerCase().includes(searchLower) ||
+        inv.customer_name?.toLowerCase().includes(searchLower)
+      );
+    }
+
     res.json(invoices);
   } catch (err) {
-    res.status(500).json({ error: 'Server error' });
+    console.error('Invoice list error:', err);
+    res.status(500).json({ error: 'Failed to fetch invoices' });
   }
 });
 
@@ -81,18 +95,18 @@ router.get('/:id', authenticate, async (req, res) => {
       `)
       .eq('id', req.params.id)
       .single();
-    
+
     if (!invoice) {
       return res.status(404).json({ error: 'Invoice not found' });
     }
-    
+
     // Get packages for this invoice
     const { data: packages } = await supabase
       .from('invoice_packages')
       .select('*')
       .eq('invoice_id', req.params.id)
       .order('id');
-    
+
     // Get all items for this invoice
     const { data: items } = await supabase
       .from('invoice_items')
@@ -103,23 +117,23 @@ router.get('/:id', authenticate, async (req, res) => {
         products (name, cost_price, retail_price)
       `)
       .eq('invoice_id', req.params.id);
-    
+
     const formattedItems = (items || []).map(item => ({
       ...item,
       category_name: item.categories?.name,
       vendor_name: item.vendors?.name,
       product_name: item.products?.name
     }));
-    
+
     // Group items by package
     const packagesWithItems = (packages || []).map(pkg => ({
       ...pkg,
       items: formattedItems.filter(item => item.package_id === pkg.id)
     }));
-    
+
     // Items without package (legacy or standalone)
     const standaloneItems = formattedItems.filter(item => !item.package_id);
-    
+
     res.json({
       ...invoice,
       customer_name: invoice.customers?.name,
@@ -141,11 +155,11 @@ router.get('/:id', authenticate, async (req, res) => {
 router.post('/', authenticate, async (req, res) => {
   try {
     const { customer_id, recipient_id, items, packages, discount, notes, delivery_zone_id, delivery_fee, gift_message } = req.body;
-    
+
     let subtotal = 0;
     let totalCost = 0;
     let totalPackagingCost = 0;
-    
+
     // Calculate totals from packages if provided
     if (packages && packages.length > 0) {
       packages.forEach(pkg => {
@@ -162,14 +176,14 @@ router.post('/', authenticate, async (req, res) => {
       subtotal = items.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
       totalCost = items.reduce((sum, item) => sum + ((item.cost_price || 0) * item.quantity), 0);
     }
-    
+
     const total = subtotal - (discount || 0) + (delivery_fee || 0);
     const profit = total - totalCost - (delivery_fee || 0); // Exclude delivery fee from profit calc
     const profitMargin = total > 0 ? (profit / total) * 100 : 0;
     const markupPercentage = totalCost > 0 ? (profit / totalCost) * 100 : 0;
-    
+
     const invoice_number = await generateInvoiceNumber();
-    
+
     const { data: invoice, error: invoiceError } = await supabase
       .from('invoices')
       .insert({
@@ -191,9 +205,9 @@ router.post('/', authenticate, async (req, res) => {
       })
       .select()
       .single();
-    
+
     if (invoiceError) throw invoiceError;
-    
+
     // Insert packages and their items
     if (packages && packages.length > 0) {
       for (const pkg of packages) {
@@ -208,9 +222,9 @@ router.post('/', authenticate, async (req, res) => {
           })
           .select()
           .single();
-        
+
         if (pkgError) throw pkgError;
-        
+
         // Insert items for this package
         if (pkg.items && pkg.items.length > 0) {
           const packageItems = pkg.items.map(item => ({
@@ -225,7 +239,7 @@ router.post('/', authenticate, async (req, res) => {
             cost_price: item.cost_price || 0,
             total: (item.quantity || 1) * (item.unit_price || 0)
           }));
-          
+
           await supabase.from('invoice_items').insert(packageItems);
         }
       }
@@ -243,10 +257,10 @@ router.post('/', authenticate, async (req, res) => {
         cost_price: item.cost_price || 0,
         total: item.quantity * item.unit_price
       }));
-      
+
       await supabase.from('invoice_items').insert(invoiceItems);
     }
-    
+
     res.json({ id: invoice.id, invoice_number });
   } catch (err) {
     console.error('Invoice creation error:', err);
@@ -258,14 +272,14 @@ router.post('/', authenticate, async (req, res) => {
 router.patch('/:id/order-status', authenticate, async (req, res) => {
   try {
     const { order_status } = req.body;
-    
+
     const updates = { order_status };
     if (order_status === 'dispatched') {
       updates.dispatched_at = new Date().toISOString();
     } else if (order_status === 'delivered') {
       updates.delivered_at = new Date().toISOString();
     }
-    
+
     await supabase.from('invoices').update(updates).eq('id', req.params.id);
     res.json({ message: 'Order status updated' });
   } catch (err) {
@@ -277,7 +291,7 @@ router.patch('/:id/order-status', authenticate, async (req, res) => {
 router.post('/:id/photos', authenticate, async (req, res) => {
   try {
     const { photo_url, caption } = req.body;
-    
+
     const { data, error } = await supabase
       .from('delivery_photos')
       .insert({
@@ -287,7 +301,7 @@ router.post('/:id/photos', authenticate, async (req, res) => {
       })
       .select()
       .single();
-    
+
     if (error) throw error;
     res.json(data);
   } catch (err) {
@@ -303,7 +317,7 @@ router.get('/:id/photos', authenticate, async (req, res) => {
       .select('*')
       .eq('invoice_id', req.params.id)
       .order('uploaded_at', { ascending: false });
-    
+
     res.json(data || []);
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
@@ -314,14 +328,14 @@ router.get('/:id/photos', authenticate, async (req, res) => {
 router.patch('/:id/status', authenticate, async (req, res) => {
   try {
     const { status } = req.body;
-    
+
     const updates = { status };
     if (status === 'paid') {
       updates.paid_at = new Date().toISOString();
     } else {
       updates.paid_at = null;
     }
-    
+
     await supabase.from('invoices').update(updates).eq('id', req.params.id);
     res.json({ message: 'Status updated' });
   } catch (err) {
@@ -351,41 +365,49 @@ router.get('/:id/pdf', authenticate, async (req, res) => {
       `)
       .eq('id', req.params.id)
       .single();
-    
+
     if (!invoice) {
       return res.status(404).json({ error: 'Invoice not found' });
     }
-    
+
+    // Get packages for this invoice
+    const { data: packages } = await supabase
+      .from('invoice_packages')
+      .select('*')
+      .eq('invoice_id', req.params.id)
+      .order('id');
+
+    // Get all items for this invoice
     const { data: items } = await supabase
       .from('invoice_items')
       .select(`*, categories (name)`)
       .eq('invoice_id', req.params.id);
-    
+
     const { data: settingsData } = await supabase.from('settings').select('*');
     const settings = {};
     (settingsData || []).forEach(row => { settings[row.key] = row.value; });
-    
+
     const doc = new PDFDocument({ margin: 50 });
-    
+
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename="${invoice.invoice_number}.pdf"`);
-    
+
     doc.pipe(res);
-    
+
     // Logo
     const logoPath = path.join(__dirname, '..', '..', 'uploads', 'logo.png');
     if (fs.existsSync(logoPath)) {
       doc.image(logoPath, 50, 45, { width: 80 });
     }
-    
+
     // Parse phone numbers
     let phoneNumbers = [];
-    try { phoneNumbers = JSON.parse(settings.phone_numbers || '[]'); } catch {}
-    
+    try { phoneNumbers = JSON.parse(settings.phone_numbers || '[]'); } catch { }
+
     // Header
     doc.fontSize(20).text(settings.business_name || 'Mathaka Gift Store', 150, 50);
     doc.fontSize(10).text(settings.business_address || '', 150, 75);
-    
+
     // Show phone numbers
     let headerY = 90;
     if (phoneNumbers.length > 0) {
@@ -397,21 +419,21 @@ router.get('/:id/pdf', authenticate, async (req, res) => {
     if (settings.business_email) {
       doc.text(settings.business_email, 150, headerY);
     }
-    
+
     // Invoice title
     doc.fontSize(24).text('INVOICE', 400, 50, { align: 'right' });
     doc.fontSize(12).text(invoice.invoice_number, 400, 80, { align: 'right' });
     doc.text(`Date: ${new Date(invoice.created_at).toLocaleDateString()}`, 400, 95, { align: 'right' });
     doc.text(`Status: ${invoice.status.toUpperCase()}`, 400, 110, { align: 'right' });
-    
+
     doc.moveTo(50, 140).lineTo(550, 140).stroke();
-    
+
     // Bill To
     doc.fontSize(12).text('Bill To:', 50, 160);
     doc.fontSize(10).text(invoice.customers?.name || '', 50, 180);
     doc.text(`WhatsApp: ${invoice.customers?.whatsapp || ''}`, 50, 195);
     if (invoice.customers?.country) doc.text(`Country: ${invoice.customers.country}`, 50, 210);
-    
+
     // Deliver To
     if (invoice.recipients?.name) {
       doc.fontSize(12).text('Deliver To:', 300, 160);
@@ -419,59 +441,129 @@ router.get('/:id/pdf', authenticate, async (req, res) => {
       if (invoice.recipients.phone) doc.text(`Phone: ${invoice.recipients.phone}`, 300, 195);
       if (invoice.recipients.address) doc.text(invoice.recipients.address, 300, 210, { width: 200 });
     }
-    
-    // Items table
-    let y = 260;
-    doc.fontSize(10);
-    doc.text('Description', 50, y);
-    doc.text('Category', 220, y);
-    doc.text('Qty', 320, y);
-    doc.text('Price', 370, y);
-    doc.text('Total', 450, y, { align: 'right', width: 100 });
-    
-    doc.moveTo(50, y + 15).lineTo(550, y + 15).stroke();
-    y += 25;
-    
+
     const currency = settings.currency || 'Rs.';
-    
-    for (const item of (items || [])) {
-      doc.text(item.description, 50, y, { width: 160 });
-      doc.text(item.categories?.name || '-', 220, y);
-      doc.text(item.quantity.toString(), 320, y);
-      doc.text(`${currency} ${parseFloat(item.unit_price).toFixed(2)}`, 370, y);
-      doc.text(`${currency} ${parseFloat(item.total).toFixed(2)}`, 450, y, { align: 'right', width: 100 });
-      y += 20;
+    let y = 260;
+
+    // Check if we have packages (modern structure)
+    if (packages && packages.length > 0) {
+      // Package-based layout
+      for (const pkg of packages) {
+        // Package header with decorative styling
+        doc.fontSize(12).fillColor('#6B21A8').text(`🎁 ${pkg.package_name}`, 50, y);
+        doc.fillColor('#000000');
+        y += 20;
+
+        // Items in package
+        const packageItems = (items || []).filter(item => item.package_id === pkg.id);
+        doc.fontSize(9);
+
+        for (const item of packageItems) {
+          doc.text(`   • ${item.description}`, 60, y, { width: 280 });
+          doc.text(`× ${item.quantity}`, 350, y);
+          y += 15;
+        }
+
+        // Package price
+        doc.fontSize(10);
+        y += 5;
+        doc.text(`Package Price:`, 350, y);
+        doc.text(`${currency} ${parseFloat(pkg.package_price).toLocaleString()}`, 450, y, { align: 'right', width: 100 });
+        y += 25;
+
+        // Separator between packages
+        if (packages.indexOf(pkg) < packages.length - 1) {
+          doc.moveTo(50, y - 5).lineTo(550, y - 5).dash(2, { space: 2 }).stroke().undash();
+          y += 10;
+        }
+      }
+
+      // Items without package (legacy/standalone)
+      const standaloneItems = (items || []).filter(item => !item.package_id);
+      if (standaloneItems.length > 0) {
+        doc.moveTo(50, y).lineTo(550, y).stroke();
+        y += 15;
+        doc.fontSize(11).text('Additional Items', 50, y);
+        y += 20;
+        doc.fontSize(9);
+
+        for (const item of standaloneItems) {
+          doc.text(item.description, 60, y, { width: 250 });
+          doc.text(`× ${item.quantity}`, 320, y);
+          doc.text(`${currency} ${parseFloat(item.total).toLocaleString()}`, 450, y, { align: 'right', width: 100 });
+          y += 18;
+        }
+      }
+    } else {
+      // Legacy item-based layout (backward compatibility)
+      doc.fontSize(10);
+      doc.text('Description', 50, y);
+      doc.text('Qty', 320, y);
+      doc.text('Price', 370, y);
+      doc.text('Total', 450, y, { align: 'right', width: 100 });
+
+      doc.moveTo(50, y + 15).lineTo(550, y + 15).stroke();
+      y += 25;
+
+      for (const item of (items || [])) {
+        doc.text(item.description, 50, y, { width: 260 });
+        doc.text(item.quantity.toString(), 320, y);
+        doc.text(`${currency} ${parseFloat(item.unit_price).toFixed(2)}`, 370, y);
+        doc.text(`${currency} ${parseFloat(item.total).toFixed(2)}`, 450, y, { align: 'right', width: 100 });
+        y += 20;
+      }
     }
-    
-    doc.moveTo(50, y).lineTo(550, y).stroke();
-    y += 15;
-    
-    // Totals
+
+    // Separator before totals
+    doc.moveTo(50, y + 5).lineTo(550, y + 5).stroke();
+    y += 20;
+
+    // Totals section
+    doc.fontSize(10);
     doc.text('Subtotal:', 370, y);
-    doc.text(`${currency} ${parseFloat(invoice.subtotal).toFixed(2)}`, 450, y, { align: 'right', width: 100 });
-    y += 15;
-    
+    doc.text(`${currency} ${parseFloat(invoice.subtotal).toLocaleString()}`, 450, y, { align: 'right', width: 100 });
+    y += 18;
+
+    if (invoice.delivery_fee > 0) {
+      doc.text('Delivery Fee:', 370, y);
+      doc.text(`${currency} ${parseFloat(invoice.delivery_fee).toLocaleString()}`, 450, y, { align: 'right', width: 100 });
+      y += 18;
+    }
+
     if (invoice.discount > 0) {
       doc.text('Discount:', 370, y);
-      doc.text(`- ${currency} ${parseFloat(invoice.discount).toFixed(2)}`, 450, y, { align: 'right', width: 100 });
-      y += 15;
+      doc.text(`- ${currency} ${parseFloat(invoice.discount).toLocaleString()}`, 450, y, { align: 'right', width: 100 });
+      y += 18;
     }
-    
-    doc.fontSize(12).text('Total:', 370, y);
-    doc.text(`${currency} ${parseFloat(invoice.total).toFixed(2)}`, 450, y, { align: 'right', width: 100 });
-    
+
+    // Total with emphasis
+    doc.fontSize(14).fillColor('#6B21A8');
+    doc.text('Total:', 370, y);
+    doc.text(`${currency} ${parseFloat(invoice.total).toLocaleString()}`, 450, y, { align: 'right', width: 100 });
+    doc.fillColor('#000000');
+    y += 30;
+
+    // Gift Message (if present)
+    if (invoice.gift_message) {
+      doc.fontSize(11).fillColor('#D97706').text('💌 Gift Message:', 50, y);
+      doc.fillColor('#000000');
+      y += 18;
+      doc.fontSize(10).text(`"${invoice.gift_message}"`, 60, y, { width: 490, oblique: true });
+      y += 30;
+    }
+
     // Bank details
     let bankAccounts = [];
-    try { bankAccounts = JSON.parse(settings.bank_accounts || '[]'); } catch {}
-    
+    try { bankAccounts = JSON.parse(settings.bank_accounts || '[]'); } catch { }
+
     if (bankAccounts.length > 0) {
-      y += 40;
+      y += 20;
       doc.fontSize(12).text('Bank Details:', 50, y);
       doc.fontSize(10);
       y += 20;
-      
+
       bankAccounts.forEach((account, index) => {
-        if (index > 0) y += 10; // Space between accounts
+        if (index > 0) y += 10;
         doc.text(`Bank: ${account.bank_name || ''}`, 50, y);
         doc.text(`Account Name: ${account.account_name || ''}`, 50, y + 12);
         doc.text(`Account Number: ${account.account_number || ''}`, 50, y + 24);
@@ -479,20 +571,21 @@ router.get('/:id/pdf', authenticate, async (req, res) => {
         y += 48;
       });
     }
-    
-    // Notes
-    if (invoice.notes) {
-      y += 80;
+
+    // Notes (internal, optional display)
+    if (invoice.notes && req.query.showNotes === 'true') {
+      y += 20;
       doc.fontSize(10).text('Notes:', 50, y);
       doc.text(invoice.notes, 50, y + 15, { width: 500 });
     }
-    
+
     // Footer
-    doc.fontSize(8).text('Thank you for your business!', 50, 750, { align: 'center', width: 500 });
-    
+    doc.fontSize(8).text('Thank you for your business! 🎁', 50, 750, { align: 'center', width: 500 });
+
     doc.end();
   } catch (err) {
-    res.status(500).json({ error: 'Server error' });
+    console.error('PDF generation error:', err);
+    res.status(500).json({ error: 'Failed to generate PDF' });
   }
 });
 
