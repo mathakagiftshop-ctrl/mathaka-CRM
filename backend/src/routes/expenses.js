@@ -8,7 +8,7 @@ const router = Router();
 router.get('/', authenticate, async (req, res) => {
   try {
     const { month, year, vendor_id } = req.query;
-    
+
     let query = supabase
       .from('expenses')
       .select(`
@@ -18,18 +18,18 @@ router.get('/', authenticate, async (req, res) => {
         users (name)
       `)
       .order('expense_date', { ascending: false });
-    
+
     if (vendor_id) query = query.eq('vendor_id', vendor_id);
-    
+
     const { data } = await query;
-    
+
     const expenses = (data || []).map(e => ({
       ...e,
       vendor_name: e.vendors?.name,
       invoice_number: e.invoices?.invoice_number,
       created_by_name: e.users?.name
     }));
-    
+
     res.json(expenses);
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
@@ -40,24 +40,35 @@ router.get('/', authenticate, async (req, res) => {
 router.get('/summary', authenticate, async (req, res) => {
   try {
     const { data: expenses } = await supabase.from('expenses').select('amount, expense_date');
-    const { data: invoices } = await supabase.from('invoices').select('total, status, paid_at').eq('status', 'paid');
-    
+
+    // Use amount_paid for revenue (includes partial payments)
+    const { data: invoices } = await supabase
+      .from('invoices')
+      .select('amount_paid, status')
+      .in('status', ['paid', 'partial']);
+
+    // Get payments for accurate monthly revenue calculation
+    const { data: payments } = await supabase
+      .from('payments')
+      .select('amount, payment_date');
+
     const totalExpenses = (expenses || []).reduce((sum, e) => sum + parseFloat(e.amount), 0);
-    const totalRevenue = (invoices || []).reduce((sum, i) => sum + parseFloat(i.total), 0);
+    const totalRevenue = (invoices || []).reduce((sum, i) => sum + (parseFloat(i.amount_paid) || 0), 0);
     const profit = totalRevenue - totalExpenses;
-    
-    // This month
+
+    // This month calculations
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-    
+
     const thisMonthExpenses = (expenses || [])
       .filter(e => e.expense_date >= startOfMonth.split('T')[0])
       .reduce((sum, e) => sum + parseFloat(e.amount), 0);
-    
-    const thisMonthRevenue = (invoices || [])
-      .filter(i => i.paid_at && i.paid_at >= startOfMonth)
-      .reduce((sum, i) => sum + parseFloat(i.total), 0);
-    
+
+    // Use payments table for accurate monthly revenue
+    const thisMonthRevenue = (payments || [])
+      .filter(p => p.payment_date >= startOfMonth)
+      .reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+
     res.json({
       totalExpenses,
       totalRevenue,
@@ -76,7 +87,7 @@ router.get('/summary', authenticate, async (req, res) => {
 router.post('/', authenticate, async (req, res) => {
   try {
     const { invoice_id, vendor_id, description, amount, expense_date, notes } = req.body;
-    
+
     const { data, error } = await supabase
       .from('expenses')
       .insert({
@@ -90,7 +101,7 @@ router.post('/', authenticate, async (req, res) => {
       })
       .select()
       .single();
-    
+
     if (error) throw error;
     res.json(data);
   } catch (err) {
@@ -102,14 +113,14 @@ router.post('/', authenticate, async (req, res) => {
 router.put('/:id', authenticate, async (req, res) => {
   try {
     const { vendor_id, description, amount, expense_date, notes } = req.body;
-    
+
     const { data, error } = await supabase
       .from('expenses')
       .update({ vendor_id, description, amount, expense_date, notes })
       .eq('id', req.params.id)
       .select()
       .single();
-    
+
     if (error) throw error;
     res.json(data);
   } catch (err) {

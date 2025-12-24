@@ -26,6 +26,8 @@ import activityLogRoutes from './routes/activityLog.js';
 import reportRoutes from './routes/reports.js';
 import paymentRoutes from './routes/payments.js';
 import aiRoutes from './routes/ai.js';
+import pushRoutes from './routes/push.js';
+import reminderRoutes from './routes/reminders.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -66,6 +68,8 @@ app.use('/api/activity-log', activityLogRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/push', pushRoutes);
+app.use('/api/reminders', reminderRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

@@ -329,13 +329,13 @@ export default async function handler(req, res) {
       const { count: totalCustomers } = await supabase.from('customers').select('*', { count: 'exact', head: true });
       const { count: totalInvoices } = await supabase.from('invoices').select('*', { count: 'exact', head: true });
       const { count: pendingInvoices } = await supabase.from('invoices').select('*', { count: 'exact', head: true }).eq('status', 'pending');
-      // Revenue = sum of all amount_paid (includes partial payments)
-      const { data: revenueData } = await supabase.from('invoices').select('amount_paid').in('status', ['paid', 'partial']);
-      const totalRevenue = (revenueData || []).reduce((sum, inv) => sum + (parseFloat(inv.amount_paid) || 0), 0);
+      // Total revenue = sum of all payments received (cash-basis accounting)
+      const { data: allPaymentsData } = await supabase.from('payments').select('amount');
+      const totalRevenue = (allPaymentsData || []).reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
       const startOfMonth = new Date(); startOfMonth.setDate(1); startOfMonth.setHours(0, 0, 0, 0);
-      // This month revenue from paid invoices
-      const { data: monthRevenueData } = await supabase.from('invoices').select('total').eq('status', 'paid').gte('paid_at', startOfMonth.toISOString());
-      const thisMonthRevenue = (monthRevenueData || []).reduce((sum, inv) => sum + parseFloat(inv.total), 0);
+      // This month revenue from actual payments received (cash-basis accounting)
+      const { data: monthPaymentsData } = await supabase.from('payments').select('amount, payment_date').gte('payment_date', startOfMonth.toISOString());
+      const thisMonthRevenue = (monthPaymentsData || []).reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
       const { data: recentInvoicesData } = await supabase.from('invoices').select(`id, invoice_number, total, status, created_at, customers (name)`).order('created_at', { ascending: false }).limit(5);
       const recentInvoices = (recentInvoicesData || []).map(inv => ({ ...inv, customer_name: inv.customers?.name }));
       const today = new Date();
@@ -429,14 +429,18 @@ export default async function handler(req, res) {
     if (segments[0] === 'expenses') {
       if (segments[1] === 'summary' && method === 'GET') {
         const { data: expenses } = await supabase.from('expenses').select('amount, expense_date');
-        const { data: invoices } = await supabase.from('invoices').select('total, status, paid_at').eq('status', 'paid');
+        // Use amount_paid for revenue (includes partial payments)
+        const { data: invoices } = await supabase.from('invoices').select('amount_paid, status').in('status', ['paid', 'partial']);
+        // Get payments for accurate monthly revenue calculation
+        const { data: payments } = await supabase.from('payments').select('amount, payment_date');
         const totalExpenses = (expenses || []).reduce((sum, e) => sum + parseFloat(e.amount), 0);
-        const totalRevenue = (invoices || []).reduce((sum, i) => sum + parseFloat(i.total), 0);
+        const totalRevenue = (invoices || []).reduce((sum, i) => sum + (parseFloat(i.amount_paid) || 0), 0);
         const profit = totalRevenue - totalExpenses;
         const now = new Date();
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
         const thisMonthExpenses = (expenses || []).filter(e => e.expense_date >= startOfMonth.split('T')[0]).reduce((sum, e) => sum + parseFloat(e.amount), 0);
-        const thisMonthRevenue = (invoices || []).filter(i => i.paid_at && i.paid_at >= startOfMonth).reduce((sum, i) => sum + parseFloat(i.total), 0);
+        // Use payments table for accurate monthly revenue
+        const thisMonthRevenue = (payments || []).filter(p => p.payment_date >= startOfMonth).reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
         return json(res, { totalExpenses, totalRevenue, profit, profitMargin: totalRevenue > 0 ? ((profit / totalRevenue) * 100).toFixed(1) : 0, thisMonthExpenses, thisMonthRevenue, thisMonthProfit: thisMonthRevenue - thisMonthExpenses });
       }
       if (method === 'GET' && !segments[1]) {
@@ -517,6 +521,58 @@ export default async function handler(req, res) {
           byCountry: Object.entries(countryData).map(([country, data]) => ({ country, ...data })).sort((a, b) => b.revenue - a.revenue),
           topCustomers
         });
+      }
+      // Profitability report - uses amount_paid and payments for accurate revenue
+      if (segments[1] === 'profitability' && method === 'GET') {
+        const { data: invoices } = await supabase.from('invoices').select('id, total, amount_paid, total_cost, total_packaging_cost, created_at, status').in('status', ['paid', 'partial']);
+        const { data: payments } = await supabase.from('payments').select('invoice_id, amount, payment_date');
+        const paymentsByInvoice = {};
+        (payments || []).forEach(p => {
+          if (!paymentsByInvoice[p.invoice_id]) paymentsByInvoice[p.invoice_id] = [];
+          paymentsByInvoice[p.invoice_id].push(p);
+        });
+        const monthlyData = {};
+        let totalRevenue = 0, totalCost = 0, totalPackagingCost = 0;
+        (invoices || []).forEach(inv => {
+          const revenue = parseFloat(inv.amount_paid) || 0;
+          const cost = parseFloat(inv.total_cost) || 0;
+          const packagingCost = parseFloat(inv.total_packaging_cost) || 0;
+          const invPayments = paymentsByInvoice[inv.id] || [];
+          if (invPayments.length > 0) {
+            const totalPaid = invPayments.reduce((s, p) => s + parseFloat(p.amount), 0);
+            invPayments.forEach(p => {
+              const month = p.payment_date.substring(0, 7);
+              const amt = parseFloat(p.amount);
+              const costProp = totalPaid > 0 ? (amt / totalPaid) * cost : 0;
+              const pkgProp = totalPaid > 0 ? (amt / totalPaid) * packagingCost : 0;
+              if (!monthlyData[month]) monthlyData[month] = { revenue: 0, cost: 0, packagingCost: 0, orders: 0 };
+              monthlyData[month].revenue += amt;
+              monthlyData[month].cost += costProp;
+              monthlyData[month].packagingCost += pkgProp;
+            });
+          } else {
+            const month = inv.created_at.substring(0, 7);
+            if (!monthlyData[month]) monthlyData[month] = { revenue: 0, cost: 0, packagingCost: 0, orders: 0 };
+            monthlyData[month].revenue += revenue;
+            monthlyData[month].cost += cost;
+            monthlyData[month].packagingCost += packagingCost;
+          }
+          const orderMonth = inv.created_at.substring(0, 7);
+          if (!monthlyData[orderMonth]) monthlyData[orderMonth] = { revenue: 0, cost: 0, packagingCost: 0, orders: 0 };
+          monthlyData[orderMonth].orders += 1;
+          totalRevenue += revenue;
+          totalCost += cost;
+          totalPackagingCost += packagingCost;
+        });
+        const totalProfit = totalRevenue - totalCost;
+        const avgMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
+        const avgMarkup = totalCost > 0 ? (totalProfit / totalCost) * 100 : 0;
+        const monthly = Object.entries(monthlyData).map(([month, d]) => {
+          const profit = d.revenue - d.cost;
+          return { month, revenue: d.revenue, cost: d.cost, profit, margin: d.revenue > 0 ? (profit / d.revenue) * 100 : 0, markup: d.cost > 0 ? (profit / d.cost) * 100 : 0, orders: d.orders };
+        }).sort((a, b) => a.month.localeCompare(b.month));
+        const packagingCosts = Object.entries(monthlyData).filter(([_, d]) => d.packagingCost > 0).map(([month, d]) => ({ month, cost: d.packagingCost })).sort((a, b) => a.month.localeCompare(b.month));
+        return json(res, { summary: { totalRevenue, totalCost, totalProfit, totalPackagingCost, avgMargin, avgMarkup }, monthly, packagingCosts });
       }
       if (segments[1] === 'inactive-customers' && method === 'GET') {
         const days = url.searchParams.get('days') || 90;
@@ -625,8 +681,10 @@ export default async function handler(req, res) {
     if (segments[0] === 'ai') {
       const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
       const GROQ_API_KEY = process.env.GROQ_API_KEY;
+      const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
       const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
       const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+      const DEEPSEEK_API_URL = 'https://api.deepseek.com/chat/completions';
 
       if (segments[1] === 'package-suggestions' && method === 'POST') {
         const { message } = req.body;
@@ -635,24 +693,60 @@ export default async function handler(req, res) {
         const giftProducts = productList.filter(p => p.type === 'product');
         const packagingProducts = productList.filter(p => p.type === 'packaging');
 
-        const systemPrompt = `You are a gift package assistant for Mathaka Gift Store (Sri Lanka). Create packages that MAXIMIZE value within budget.
+        const systemPrompt = `You are a gift package assistant for Mathaka Gift Store (Sri Lanka). Create packages that MAXIMIZE value within budget while selecting APPROPRIATE items for the recipient.
 
-PRODUCTS AVAILABLE (cost prices in Rs.):
+## RECIPIENT PREFERENCES (CRITICAL - Follow these guidelines):
+
+**Wife/Girlfriend/Fiancée:**
+- ✅ PREFER: Perfumes, jewelry, skincare, flowers, premium chocolates, handbags, watches, spa/beauty products, scented candles, romantic items
+- ❌ AVOID: Children's items (Kinder Joy, toys, kids' snacks), cheap sweets, generic snacks, home appliances
+
+**Mother/Mother-in-law:**
+- ✅ PREFER: Flowers, skincare, traditional jewelry, prayer items, shawls, kitchen accessories, tea sets, health products, premium dry fruits
+- ❌ AVOID: Children's items, overly romantic items, teenage products
+
+**Father/Father-in-law:**
+- ✅ PREFER: Watches, wallets, formal accessories, grooming kits, premium tea/coffee, cufflinks, pens, books
+- ❌ AVOID: Women's perfumes, makeup, children's items
+
+**Friend (Female):**
+- ✅ PREFER: Perfumes, cosmetics, accessories, chocolates, scarves, jewelry, self-care products
+- ❌ AVOID: Items too personal/romantic, baby items
+
+**Friend (Male):**
+- ✅ PREFER: Watches, wallets, grooming products, tech accessories, chocolates, gift cards
+- ❌ AVOID: Women's products, overly intimate items
+
+**Child/Kids:**
+- ✅ PREFER: Toys, games, Kinder Joy, children's chocolates, coloring sets, stuffed animals, books, school supplies
+- ❌ AVOID: Adult perfumes, jewelry, alcohol-related items
+
+**Boss/Colleague:**
+- ✅ PREFER: Premium tea/coffee, elegant stationery, desk accessories, formal gift boxes, gourmet items
+- ❌ AVOID: Personal/intimate items, casual items
+
+**Anniversary/Romantic Occasions:**
+- ✅ PREFER: Couples items, flowers, perfumes, jewelry, chocolates, romantic gift sets
+- ❌ AVOID: Practical/household items, children's products
+
+---
+
+## PRODUCTS AVAILABLE (cost prices in Rs.):
 ${giftProducts.map(p => `- ${p.name} [${p.category}]: Rs. ${p.cost_price}`).join('\n')}
 
-PACKAGING MATERIALS (cost prices in Rs.):
+## PACKAGING MATERIALS (cost prices in Rs.):
 ${packagingProducts.map(p => `- ${p.name}: Rs. ${p.cost_price}`).join('\n')}
 
-RULES:
+## PRICING RULES:
 1. PROFIT MARGIN: 38% margin → Cost = Selling Price × 0.62
 2. FILL the package to use the full cost budget
 3. Create 3 options: Budget -5%, Budget exact, Budget +5%
 
-For Rs. 10,000 budget: Max Cost = 10,000 × 0.62 = Rs. 6,200. Select items totaling ~Rs. 6,200.
+Example: For Rs. 10,000 budget → Max Cost = 10,000 × 0.62 = Rs. 6,200. Select items totaling ~Rs. 6,200.
 
-USE THIS EXACT FORMAT:
+## OUTPUT FORMAT (USE EXACTLY):
 
-## 🎁 Gift Packages for [Recipient]
+## 🎁 Gift Packages for [Recipient Type]
 
 ---
 
@@ -693,12 +787,25 @@ USE THIS EXACT FORMAT:
 ---
 
 ### ✨ Recommendation
-[Which option is best and why - 1-2 sentences]
+[Which option is best and why - consider recipient preferences - 1-2 sentences]
 
-IMPORTANT: Fill packages to use the FULL cost budget. Do not waste budget!`;
+**CRITICAL RULES:**
+1. ALWAYS match items to recipient type - a wife should NEVER receive Kinder Joy
+2. Fill packages to use the FULL cost budget
+3. Only use products from the AVAILABLE list above
+4. Be thoughtful about cultural appropriateness for Sri Lankan recipients`;
 
         let aiResponse;
-        if (GROQ_API_KEY) {
+        if (DEEPSEEK_API_KEY) {
+          const response = await fetch(DEEPSEEK_API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${DEEPSEEK_API_KEY}` },
+            body: JSON.stringify({ model: 'deepseek-chat', messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: message }], temperature: 0.3, max_tokens: 2048 })
+          });
+          if (!response.ok) return error(res, 'Failed to generate suggestions', 500);
+          const data = await response.json();
+          aiResponse = data.choices?.[0]?.message?.content || 'Sorry, I could not generate suggestions.';
+        } else if (GROQ_API_KEY) {
           const response = await fetch(GROQ_API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_API_KEY}` },
@@ -717,7 +824,7 @@ IMPORTANT: Fill packages to use the FULL cost budget. Do not waste budget!`;
           const data = await response.json();
           aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I could not generate suggestions.';
         } else {
-          return error(res, 'No AI API key configured. Add GROQ_API_KEY or GEMINI_API_KEY to environment variables.', 500);
+          return error(res, 'No AI API key configured. Add DEEPSEEK_API_KEY, GROQ_API_KEY, or GEMINI_API_KEY to environment variables.', 500);
         }
         return json(res, { response: aiResponse });
       }

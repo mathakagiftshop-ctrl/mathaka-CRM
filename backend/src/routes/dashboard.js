@@ -22,26 +22,26 @@ router.get('/', authenticate, async (req, res) => {
       .select('*', { count: 'exact', head: true })
       .eq('status', 'pending');
 
-    // Total revenue (paid invoices)
-    const { data: revenueData } = await supabase
-      .from('invoices')
-      .select('total')
-      .eq('status', 'paid');
+    // Total revenue = sum of all payments received (cash-basis accounting)
+    // Using payments table directly ensures consistency with monthly calculations
+    const { data: allPaymentsData } = await supabase
+      .from('payments')
+      .select('amount');
 
-    const totalRevenue = (revenueData || []).reduce((sum, inv) => sum + parseFloat(inv.total), 0);
+    const totalRevenue = (allPaymentsData || []).reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
 
-    // This month's revenue
+    // This month's revenue - based on actual payments received this month
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
 
-    const { data: monthRevenueData } = await supabase
-      .from('invoices')
-      .select('total')
-      .eq('status', 'paid')
-      .gte('paid_at', startOfMonth.toISOString());
+    // Use payments table for accurate monthly revenue - this tracks when money was actually received
+    const { data: monthPaymentsData } = await supabase
+      .from('payments')
+      .select('amount, payment_date')
+      .gte('payment_date', startOfMonth.toISOString());
 
-    const thisMonthRevenue = (monthRevenueData || []).reduce((sum, inv) => sum + parseFloat(inv.total), 0);
+    const thisMonthRevenue = (monthPaymentsData || []).reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
 
     // Recent invoices
     const { data: recentInvoicesData } = await supabase
