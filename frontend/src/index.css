@@ -16,7 +16,8 @@ html {
 }
 
 /* Prevent pull-to-refresh on mobile */
-html, body {
+html,
+body {
   overscroll-behavior-y: contain;
 }
 
@@ -37,13 +38,17 @@ html, body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
 
 /* Mobile input styles - prevent zoom on iOS */
 @media screen and (max-width: 768px) {
-  input, select, textarea {
+
+  input,
+  select,
+  textarea {
     font-size: 16px !important;
   }
 }
@@ -59,7 +64,7 @@ html, body {
     -webkit-user-select: none;
     user-select: none;
   }
-  
+
   /* Add extra padding for notched devices */
   .pwa-header {
     padding-top: env(safe-area-inset-top);
@@ -78,31 +83,17 @@ html, body {
 
 /* Loading spinner */
 .spinner {
-  @apply animate-spin rounded-full border-2 border-gray-300 border-t-crm-purple;
+  @apply animate-spin rounded-full border-2 border-gray-300 border-t-crm-primary;
 }
 
-@layer components {
-  .glass-panel {
-    @apply bg-white/70 backdrop-blur-md border border-white/60 shadow-soft rounded-3xl;
-  }
-  
-  .glass-panel-dark {
-    @apply bg-crm-dark text-white border border-white/10 shadow-xl rounded-3xl;
-  }
-  
-  .glass-button {
-    @apply px-4 py-2 rounded-xl transition-all duration-300 active:scale-95;
-  }
-  
-  .glass-button-primary {
-    @apply bg-crm-purple text-white shadow-glow-purple hover:bg-crm-highlight;
-  }
-  
-  .nav-item-active {
-    @apply bg-crm-purple text-white shadow-glow-purple scale-105;
-  }
-  
-  .nav-item {
-    @apply text-gray-500 hover:bg-white/50 hover:text-crm-purple transition-all duration-200;
-  }
+.panel {
+  @apply bg-crm-surface border border-crm-border shadow-card rounded-xl;
+}
+
+.btn-primary {
+  @apply bg-crm-primary text-white shadow-soft hover:bg-gray-800 active:scale-95 transition-all duration-200;
+}
+
+.btn-ghost {
+  @apply text-crm-secondary hover:bg-gray-100 hover:text-crm-primary p-2 rounded-lg transition-colors;
 }

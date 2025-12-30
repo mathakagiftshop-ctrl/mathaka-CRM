@@ -8,21 +8,23 @@ export default {
     extend: {
       colors: {
         crm: {
-          purple: '#6D28D9', // Deep violet
-          highlight: '#8B5CF6', // Lighter violet
-          green: '#4ADE80',  // Bright green
-          dark: '#111827',   // Dark card background
-          background: '#F3F4F6', // Light gray background
+          primary: '#0F172A', // Slate-900 (Main Brand/Text)
+          secondary: '#64748B', // Slate-500 (Subtext)
+          accent: '#0EA5E9', // Sky-500 (Interactive/Links)
+          success: '#10B981', // Emerald-500
+          danger: '#EF4444', // Red-500
+          warning: '#F59E0B', // Amber-500
+          background: '#F8FAFC', // Slate-50 (App Background)
+          surface: '#FFFFFF', // White (Card Background)
+          border: '#E2E8F0', // Slate-200 (Borders)
         }
       },
       fontFamily: {
-        sans: ['"Inter"', 'system-ui', '-apple-system', 'sans-serif'],
+        sans: ['"Inter"', '"Roboto"', '"Outfit"', 'system-ui', '-apple-system', 'sans-serif'],
       },
       boxShadow: {
-        'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.15)',
-        'soft': '0 10px 40px -10px rgba(0,0,0,0.08)',
-        'glow-purple': '0 0 20px -5px rgba(109, 40, 217, 0.5)',
-        'glow-green': '0 0 20px -5px rgba(74, 222, 128, 0.5)',
+        'soft': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+        'card': '0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02)',
       }
     },
   },

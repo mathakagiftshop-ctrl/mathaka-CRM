@@ -84,17 +84,17 @@ export default function Customers() {
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-        <h1 className="text-2xl font-bold">Customers</h1>
+        <h1 className="text-2xl font-bold text-crm-primary">Customers</h1>
         <div className="flex gap-2">
           <button
             onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 border border-purple-200 text-purple-600 px-4 py-2 rounded-lg hover:bg-purple-50"
+            className="flex items-center gap-2 btn-ghost border border-crm-border text-crm-primary"
           >
             <Plus size={20} /> Quick Add
           </button>
           <button
             onClick={() => setShowWizard(true)}
-            className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
+            className="flex items-center gap-2 btn-primary px-4 py-2 rounded-lg"
           >
             <Sparkles size={20} /> New Customer Setup
           </button>
@@ -109,35 +109,37 @@ export default function Customers() {
           placeholder="Search customers..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 border rounded-lg"
+          className="w-full pl-10 pr-4 py-2 border border-crm-border rounded-lg focus:ring-1 focus:ring-crm-primary outline-none"
         />
       </div>
 
       {/* Customer List */}
-      <div className="bg-white rounded-xl shadow-sm divide-y">
+      <div className="panel bg-white divide-y divide-gray-100">
         {loading ? (
-          <p className="p-4 text-center">Loading...</p>
+          <div className="p-8 flex justify-center">
+            <div className="spinner h-8 w-8"></div>
+          </div>
         ) : customers.length === 0 ? (
-          <p className="p-8 text-center text-gray-500">No customers found</p>
+          <p className="p-8 text-center text-crm-secondary">No customers found</p>
         ) : (
           customers.map(customer => (
-            <div key={customer.id} className="p-4 flex items-center justify-between hover:bg-gray-50">
+            <div key={customer.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
               <Link to={`/customers/${customer.id}`} className="flex items-center gap-3 flex-1">
-                <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                  <User className="text-purple-600" size={20} />
+                <div className="w-10 h-10 bg-crm-background border border-crm-border rounded-lg flex items-center justify-center">
+                  <User className="text-crm-secondary" size={20} />
                 </div>
                 <div>
-                  <p className="font-medium">{customer.name}</p>
-                  <p className="text-sm text-gray-500">{customer.whatsapp} • {customer.country || 'N/A'}</p>
+                  <p className="font-medium text-crm-primary">{customer.name}</p>
+                  <p className="text-sm text-crm-secondary">{customer.whatsapp} • {customer.country || 'N/A'}</p>
                 </div>
               </Link>
               <div className="flex items-center gap-2">
-                <span className="text-xs bg-gray-100 px-2 py-1 rounded">
+                <span className="text-xs bg-gray-100 text-crm-secondary px-2 py-1 rounded">
                   {customer.invoice_count} orders
                 </span>
                 <button
                   onClick={() => openWhatsApp(customer.whatsapp, customer.name)}
-                  className="p-2 text-green-600 hover:bg-green-50 rounded-lg"
+                  className="p-2 text-crm-success hover:bg-green-50 rounded-lg"
                 >
                   <MessageCircle size={20} />
                 </button>

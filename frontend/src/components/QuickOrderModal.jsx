@@ -67,11 +67,11 @@ export default function QuickOrderModal({ onClose, preselectedCustomer = null, p
 
   const handleCreateOrder = async () => {
     if (!customerId || !templateId) return;
-    
+
     setLoading(true);
     try {
       const template = templates.find(t => t.id == templateId);
-      
+
       const res = await api.post('/invoices', {
         customer_id: customerId,
         recipient_id: recipientId || null,
@@ -93,7 +93,7 @@ export default function QuickOrderModal({ onClose, preselectedCustomer = null, p
         discount: 0,
         notes: 'Created via Quick Order'
       });
-      
+
       navigate(`/invoices/${res.data.id}`);
     } catch (err) {
       alert('Error creating order');
@@ -111,29 +111,28 @@ export default function QuickOrderModal({ onClose, preselectedCustomer = null, p
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
         {/* Header */}
-        <div className="p-4 border-b flex justify-between items-center bg-gradient-to-r from-yellow-50 to-orange-50">
-          <h2 className="text-lg font-bold text-orange-800 flex items-center gap-2">
-            <Zap size={20} /> Quick Order
+        <div className="p-4 border-b border-crm-border flex justify-between items-center bg-white">
+          <h2 className="text-lg font-bold text-crm-primary flex items-center gap-2">
+            <Zap size={20} className="text-crm-warning" /> Quick Order
           </h2>
-          <button onClick={onClose} className="p-2 hover:bg-white/50 rounded-lg">
+          <button onClick={onClose} className="p-2 hover:bg-crm-background rounded-lg text-crm-secondary hover:text-crm-primary">
             <X size={20} />
           </button>
         </div>
 
         {/* Progress */}
-        <div className="px-4 py-3 bg-gray-50 border-b">
+        <div className="px-4 py-3 bg-crm-background border-b border-crm-border">
           <div className="flex items-center justify-between text-sm">
             {['Customer', 'Package', 'Review'].map((label, i) => (
               <div key={label} className="flex items-center">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
-                  step > i + 1 ? 'bg-green-500 text-white' :
-                  step === i + 1 ? 'bg-orange-500 text-white' : 'bg-gray-200 text-gray-500'
-                }`}>
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${step > i + 1 ? 'bg-crm-success text-white' :
+                    step === i + 1 ? 'bg-crm-primary text-white' : 'bg-gray-200 text-gray-500'
+                  }`}>
                   {step > i + 1 ? <Check size={14} /> : i + 1}
                 </div>
-                <span className={`ml-1 ${step === i + 1 ? 'text-orange-600 font-medium' : 'text-gray-500'}`}>{label}</span>
+                <span className={`ml-1 ${step === i + 1 ? 'text-crm-primary font-medium' : 'text-crm-secondary'}`}>{label}</span>
                 {i < 2 && <ChevronRight className="mx-2 text-gray-300" size={16} />}
               </div>
             ))}
@@ -146,11 +145,11 @@ export default function QuickOrderModal({ onClose, preselectedCustomer = null, p
           {step === 1 && (
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Select Customer</label>
+                <label className="block text-sm font-medium mb-2 text-crm-secondary">Select Customer</label>
                 <select
                   value={customerId}
                   onChange={(e) => setCustomerId(e.target.value)}
-                  className="w-full px-4 py-3 border rounded-xl bg-white"
+                  className="w-full px-4 py-3 border border-crm-border rounded-xl bg-white focus:ring-1 focus:ring-crm-primary outline-none"
                 >
                   <option value="">Choose a customer...</option>
                   {customers.map(c => (
@@ -161,23 +160,22 @@ export default function QuickOrderModal({ onClose, preselectedCustomer = null, p
 
               {customerId && recipients.length > 0 && (
                 <div>
-                  <label className="block text-sm font-medium mb-2">Deliver To</label>
+                  <label className="block text-sm font-medium mb-2 text-crm-secondary">Deliver To</label>
                   <div className="space-y-2">
                     {recipients.map(r => (
                       <button
                         key={r.id}
                         onClick={() => setRecipientId(r.id)}
-                        className={`w-full p-3 border rounded-xl text-left transition-all ${
-                          recipientId == r.id 
-                            ? 'border-orange-500 bg-orange-50 ring-2 ring-orange-200' 
-                            : 'hover:border-gray-300'
-                        }`}
+                        className={`w-full p-3 border rounded-xl text-left transition-all ${recipientId == r.id
+                            ? 'border-crm-primary bg-crm-background ring-1 ring-crm-primary'
+                            : 'border-crm-border hover:border-crm-secondary'
+                          }`}
                       >
                         <div className="flex items-center gap-3">
-                          <Users size={18} className="text-gray-400" />
+                          <Users size={18} className="text-crm-secondary" />
                           <div>
-                            <p className="font-medium">{r.name}</p>
-                            {r.relationship && <p className="text-xs text-gray-500">{r.relationship}</p>}
+                            <p className="font-medium text-crm-primary">{r.name}</p>
+                            {r.relationship && <p className="text-xs text-crm-secondary">{r.relationship}</p>}
                           </div>
                         </div>
                       </button>
@@ -187,11 +185,11 @@ export default function QuickOrderModal({ onClose, preselectedCustomer = null, p
               )}
 
               {customerId && recipients.length === 0 && (
-                <div className="p-4 bg-yellow-50 rounded-xl text-center">
-                  <p className="text-sm text-yellow-700">No recipients found for this customer</p>
+                <div className="p-4 bg-crm-background rounded-xl text-center border border-crm-border">
+                  <p className="text-sm text-crm-secondary">No recipients found for this customer</p>
                   <button
                     onClick={() => navigate(`/customers/${customerId}`)}
-                    className="text-sm text-orange-600 hover:underline mt-1"
+                    className="text-sm text-crm-accent hover:underline mt-1"
                   >
                     Add recipients first →
                   </button>
@@ -204,14 +202,14 @@ export default function QuickOrderModal({ onClose, preselectedCustomer = null, p
           {step === 2 && (
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Select Package Template</label>
+                <label className="block text-sm font-medium mb-2 text-crm-secondary">Select Package Template</label>
                 {templates.length === 0 ? (
-                  <div className="p-4 bg-gray-50 rounded-xl text-center">
-                    <Sparkles className="mx-auto text-gray-300 mb-2" size={32} />
-                    <p className="text-sm text-gray-500">No templates available</p>
+                  <div className="p-4 bg-crm-background rounded-xl text-center">
+                    <Sparkles className="mx-auto text-crm-secondary mb-2" size={32} />
+                    <p className="text-sm text-crm-secondary">No templates available</p>
                     <button
                       onClick={() => navigate('/invoices/new')}
-                      className="text-sm text-orange-600 hover:underline mt-1"
+                      className="text-sm text-crm-accent hover:underline mt-1"
                     >
                       Create a full order instead →
                     </button>
@@ -222,21 +220,20 @@ export default function QuickOrderModal({ onClose, preselectedCustomer = null, p
                       <button
                         key={t.id}
                         onClick={() => setTemplateId(t.id)}
-                        className={`w-full p-3 border rounded-xl text-left transition-all ${
-                          templateId == t.id 
-                            ? 'border-orange-500 bg-orange-50 ring-2 ring-orange-200' 
-                            : 'hover:border-gray-300'
-                        }`}
+                        className={`w-full p-3 border rounded-xl text-left transition-all ${templateId == t.id
+                            ? 'border-crm-primary bg-crm-background ring-1 ring-crm-primary'
+                            : 'border-crm-border hover:border-crm-secondary'
+                          }`}
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <Package size={18} className="text-gray-400" />
+                            <Package size={18} className="text-crm-secondary" />
                             <div>
-                              <p className="font-medium">{t.name}</p>
-                              <p className="text-xs text-gray-500">{t.items?.length || 0} items</p>
+                              <p className="font-medium text-crm-primary">{t.name}</p>
+                              <p className="text-xs text-crm-secondary">{t.items?.length || 0} items</p>
                             </div>
                           </div>
-                          <span className="font-medium text-orange-600">Rs. {parseFloat(t.total_price || 0).toLocaleString()}</span>
+                          <span className="font-medium text-crm-primary">Rs. {parseFloat(t.total_price || 0).toLocaleString()}</span>
                         </div>
                       </button>
                     ))}
@@ -246,22 +243,22 @@ export default function QuickOrderModal({ onClose, preselectedCustomer = null, p
 
               {templateId && (
                 <div>
-                  <label className="block text-sm font-medium mb-2">Adjust Price (optional)</label>
+                  <label className="block text-sm font-medium mb-2 text-crm-secondary">Adjust Price (optional)</label>
                   <input
                     type="number"
                     value={packagePrice}
                     onChange={(e) => setPackagePrice(parseFloat(e.target.value) || 0)}
-                    className="w-full px-4 py-3 border rounded-xl"
+                    className="w-full px-4 py-3 border border-crm-border rounded-xl focus:ring-1 focus:ring-crm-primary outline-none"
                   />
                 </div>
               )}
 
               <div>
-                <label className="block text-sm font-medium mb-2">Delivery Zone</label>
+                <label className="block text-sm font-medium mb-2 text-crm-secondary">Delivery Zone</label>
                 <select
                   value={deliveryZoneId}
                   onChange={(e) => setDeliveryZoneId(e.target.value)}
-                  className="w-full px-4 py-3 border rounded-xl bg-white"
+                  className="w-full px-4 py-3 border border-crm-border rounded-xl bg-white focus:ring-1 focus:ring-crm-primary outline-none"
                 >
                   <option value="">Select zone (optional)</option>
                   {deliveryZones.map(z => (
@@ -275,44 +272,44 @@ export default function QuickOrderModal({ onClose, preselectedCustomer = null, p
           {/* Step 3: Review */}
           {step === 3 && (
             <div className="space-y-4">
-              <div className="p-4 bg-gray-50 rounded-xl space-y-3">
+              <div className="p-4 bg-crm-background rounded-xl space-y-3 border border-crm-border">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Customer</span>
-                  <span className="font-medium">{selectedCustomer?.name}</span>
+                  <span className="text-crm-secondary">Customer</span>
+                  <span className="font-medium text-crm-primary">{selectedCustomer?.name}</span>
                 </div>
                 {selectedRecipient && (
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Deliver To</span>
-                    <span className="font-medium">{selectedRecipient.name}</span>
+                    <span className="text-crm-secondary">Deliver To</span>
+                    <span className="font-medium text-crm-primary">{selectedRecipient.name}</span>
                   </div>
                 )}
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Package</span>
-                  <span className="font-medium">{selectedTemplate?.name}</span>
+                  <span className="text-crm-secondary">Package</span>
+                  <span className="font-medium text-crm-primary">{selectedTemplate?.name}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Package Price</span>
-                  <span className="font-medium">Rs. {packagePrice.toLocaleString()}</span>
+                  <span className="text-crm-secondary">Package Price</span>
+                  <span className="font-medium text-crm-primary">Rs. {packagePrice.toLocaleString()}</span>
                 </div>
                 {deliveryFee > 0 && (
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Delivery ({selectedZone?.name})</span>
-                    <span className="font-medium">Rs. {deliveryFee.toLocaleString()}</span>
+                    <span className="text-crm-secondary">Delivery ({selectedZone?.name})</span>
+                    <span className="font-medium text-crm-primary">Rs. {deliveryFee.toLocaleString()}</span>
                   </div>
                 )}
-                <div className="flex justify-between pt-2 border-t">
-                  <span className="font-bold">Total</span>
-                  <span className="font-bold text-orange-600">Rs. {total.toLocaleString()}</span>
+                <div className="flex justify-between pt-2 border-t border-crm-border">
+                  <span className="font-bold text-crm-primary">Total</span>
+                  <span className="font-bold text-crm-primary">Rs. {total.toLocaleString()}</span>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">Gift Message (optional)</label>
+                <label className="block text-sm font-medium mb-2 text-crm-secondary">Gift Message (optional)</label>
                 <textarea
                   value={giftMessage}
                   onChange={(e) => setGiftMessage(e.target.value)}
                   placeholder="Add a personalized message..."
-                  className="w-full px-4 py-3 border rounded-xl"
+                  className="w-full px-4 py-3 border border-crm-border rounded-xl focus:ring-1 focus:ring-crm-primary outline-none"
                   rows={3}
                 />
               </div>
@@ -321,16 +318,16 @@ export default function QuickOrderModal({ onClose, preselectedCustomer = null, p
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t bg-gray-50 flex justify-between">
+        <div className="p-4 border-t border-crm-border bg-gray-50 flex justify-between">
           {step > 1 ? (
             <button
               onClick={() => setStep(step - 1)}
-              className="px-4 py-2 border rounded-lg hover:bg-gray-100"
+              className="px-4 py-2 border border-crm-border text-crm-secondary rounded-lg hover:bg-white transition-colors"
             >
               Back
             </button>
           ) : (
-            <button onClick={onClose} className="px-4 py-2 border rounded-lg hover:bg-gray-100">
+            <button onClick={onClose} className="px-4 py-2 border border-crm-border text-crm-secondary rounded-lg hover:bg-white transition-colors">
               Cancel
             </button>
           )}
@@ -339,7 +336,7 @@ export default function QuickOrderModal({ onClose, preselectedCustomer = null, p
             <button
               onClick={() => setStep(step + 1)}
               disabled={!canProceed()}
-              className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50 flex items-center gap-2"
+              className="px-6 py-2 btn-primary rounded-lg disabled:opacity-50 flex items-center gap-2"
             >
               Next <ChevronRight size={18} />
             </button>
@@ -347,7 +344,7 @@ export default function QuickOrderModal({ onClose, preselectedCustomer = null, p
             <button
               onClick={handleCreateOrder}
               disabled={loading}
-              className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center gap-2"
+              className="px-6 py-2 bg-crm-success text-white rounded-lg hover:bg-emerald-600 disabled:opacity-50 flex items-center gap-2 shadow-sm"
             >
               {loading ? 'Creating...' : <><Check size={18} /> Create Order</>}
             </button>

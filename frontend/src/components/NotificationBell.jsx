@@ -191,11 +191,11 @@ export default function NotificationBell() {
     <div className="relative">
       <button
         onClick={() => setShowPanel(!showPanel)}
-        className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+        className="relative p-2 text-crm-secondary hover:bg-gray-100 rounded-lg transition-colors"
       >
         <Bell size={22} />
         {upcomingCount > 0 && (
-          <span className={`absolute -top-1 -right-1 w-5 h-5 ${todayCount > 0 ? 'bg-red-500' : 'bg-purple-500'} text-white text-xs rounded-full flex items-center justify-center`}>
+          <span className={`absolute -top-1 -right-1 w-5 h-5 ${todayCount > 0 ? 'bg-crm-danger' : 'bg-crm-accent'} text-white text-xs rounded-full flex items-center justify-center`}>
             {upcomingCount}
           </span>
         )}
@@ -230,8 +230,8 @@ export default function NotificationBell() {
                     onClick={pushEnabled ? disablePushNotifications : enablePushNotifications}
                     disabled={pushLoading}
                     className={`text-xs px-3 py-1 rounded-lg transition-colors ${pushEnabled
-                        ? 'bg-green-600 text-white hover:bg-green-700'
-                        : 'bg-yellow-600 text-white hover:bg-yellow-700'
+                      ? 'bg-green-600 text-white hover:bg-green-700'
+                      : 'bg-yellow-600 text-white hover:bg-yellow-700'
                       } disabled:opacity-50`}
                   >
                     {pushLoading ? '...' : pushEnabled ? 'Disable' : 'Enable'}

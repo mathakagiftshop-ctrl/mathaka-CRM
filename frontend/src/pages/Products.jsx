@@ -8,11 +8,11 @@ export default function Products() {
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [activeTab, setActiveTab] = useState('product');
-  const [form, setForm] = useState({ 
-    name: '', 
-    description: '', 
-    category_id: '', 
-    cost_price: '', 
+  const [form, setForm] = useState({
+    name: '',
+    description: '',
+    category_id: '',
+    cost_price: '',
     product_type: 'product'
   });
   const [loading, setLoading] = useState(true);
@@ -37,12 +37,12 @@ export default function Products() {
     e.preventDefault();
     setSubmitting(true);
     setError('');
-    
+
     const payload = {
       ...form,
       cost_price: parseFloat(form.cost_price) || 0
     };
-    
+
     try {
       if (editingId) {
         await api.put(`/products/${editingId}`, payload);
@@ -81,11 +81,11 @@ export default function Products() {
   };
 
   const openAddModal = (type) => {
-    setForm({ 
-      name: '', 
-      description: '', 
-      category_id: '', 
-      cost_price: '', 
+    setForm({
+      name: '',
+      description: '',
+      category_id: '',
+      cost_price: '',
       product_type: type
     });
     setEditingId(null);
@@ -98,61 +98,60 @@ export default function Products() {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Products & Packaging</h1>
+        <h1 className="text-2xl font-bold text-crm-primary">Products & Packaging</h1>
         <button
           onClick={() => openAddModal(activeTab)}
-          className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
+          className="flex items-center gap-2 btn-primary px-4 py-2 rounded-lg"
         >
           <Plus size={20} /> Add {activeTab === 'product' ? 'Product' : 'Packaging'}
         </button>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 border-b">
+      <div className="flex gap-2 border-b border-crm-border">
         <button
           onClick={() => setActiveTab('product')}
-          className={`px-4 py-2 font-medium flex items-center gap-2 border-b-2 transition-colors ${
-            activeTab === 'product' 
-              ? 'border-purple-600 text-purple-600' 
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
+          className={`px-4 py-2 font-medium flex items-center gap-2 border-b-2 transition-colors ${activeTab === 'product'
+              ? 'border-crm-primary text-crm-primary'
+              : 'border-transparent text-crm-secondary hover:text-crm-primary'
+            }`}
         >
           <Package size={18} /> Products
         </button>
         <button
           onClick={() => setActiveTab('packaging')}
-          className={`px-4 py-2 font-medium flex items-center gap-2 border-b-2 transition-colors ${
-            activeTab === 'packaging' 
-              ? 'border-purple-600 text-purple-600' 
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
+          className={`px-4 py-2 font-medium flex items-center gap-2 border-b-2 transition-colors ${activeTab === 'packaging'
+              ? 'border-crm-primary text-crm-primary'
+              : 'border-transparent text-crm-secondary hover:text-crm-primary'
+            }`}
         >
           <Box size={18} /> Packaging Materials
         </button>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm divide-y">
+      <div className="panel bg-white divide-y divide-gray-100">
         {loading ? (
-          <p className="p-4 text-center">Loading...</p>
+          <div className="p-8 flex justify-center">
+            <div className="spinner h-8 w-8"></div>
+          </div>
         ) : filteredProducts.length === 0 ? (
-          <p className="p-8 text-center text-gray-500">
+          <p className="p-8 text-center text-crm-secondary">
             No {activeTab === 'product' ? 'products' : 'packaging materials'} yet. Add your first one!
           </p>
         ) : (
           filteredProducts.map(product => (
-            <div key={product.id} className="p-4 flex items-center justify-between">
+            <div key={product.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
               <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                  product.product_type === 'packaging' ? 'bg-orange-100' : 'bg-purple-100'
-                }`}>
-                  {product.product_type === 'packaging' 
+                <div className={`w-10 h-10 rounded-lg border border-crm-border flex items-center justify-center ${product.product_type === 'packaging' ? 'bg-orange-50' : 'bg-crm-background'
+                  }`}>
+                  {product.product_type === 'packaging'
                     ? <Box className="text-orange-600" size={20} />
-                    : <Package className="text-purple-600" size={20} />
+                    : <Package className="text-crm-primary" size={20} />
                   }
                 </div>
                 <div>
-                  <p className="font-medium">{product.name}</p>
-                  <p className="text-sm text-gray-500">
+                  <p className="font-medium text-crm-primary">{product.name}</p>
+                  <p className="text-sm text-crm-secondary">
                     {product.category_name || (product.product_type === 'packaging' ? 'Packaging' : 'No category')}
                   </p>
                 </div>
@@ -160,14 +159,14 @@ export default function Products() {
               <div className="flex items-center gap-4">
                 <div className="text-right">
                   <div className="text-sm">
-                    <span className="text-gray-500">Cost:</span>
-                    <span className="ml-1 text-red-600 font-semibold">Rs. {parseFloat(product.cost_price || 0).toLocaleString()}</span>
+                    <span className="text-crm-secondary">Cost:</span>
+                    <span className="ml-1 text-crm-primary font-semibold">Rs. {parseFloat(product.cost_price || 0).toLocaleString()}</span>
                   </div>
                 </div>
-                <button onClick={() => handleEdit(product)} className="p-2 text-gray-500 hover:text-purple-600">
+                <button onClick={() => handleEdit(product)} className="p-2 text-crm-secondary hover:text-crm-primary">
                   <Edit2 size={18} />
                 </button>
-                <button onClick={() => handleDelete(product.id)} className="p-2 text-gray-500 hover:text-red-600">
+                <button onClick={() => handleDelete(product.id)} className="p-2 text-crm-secondary hover:text-crm-danger">
                   <Trash2 size={18} />
                 </button>
               </div>
@@ -195,7 +194,7 @@ export default function Products() {
                 className="w-full px-3 py-2 border rounded-lg"
                 required
               />
-              
+
               {form.product_type === 'product' && (
                 <select
                   value={form.category_id}
@@ -206,7 +205,7 @@ export default function Products() {
                   {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               )}
-              
+
               <div className="grid grid-cols-1 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Cost Price (Rs.)</label>
@@ -221,7 +220,7 @@ export default function Products() {
                   />
                 </div>
               </div>
-              
+
               <textarea
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -229,7 +228,7 @@ export default function Products() {
                 className="w-full px-3 py-2 border rounded-lg"
                 rows={2}
               />
-              
+
               <div className="flex gap-2 justify-end">
                 <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 border rounded-lg" disabled={submitting}>
                   Cancel

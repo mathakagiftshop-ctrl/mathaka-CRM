@@ -48,13 +48,13 @@ export default function Layout() {
       <Link
         to={item.path}
         onClick={() => setSidebarOpen(false)}
-        className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 touch-target group ${isActive
-          ? 'bg-crm-purple text-white shadow-glow-purple'
-          : 'text-gray-500 hover:bg-white hover:text-crm-purple'
+        className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 group ${isActive
+          ? 'bg-crm-primary text-white shadow-sm'
+          : 'text-crm-secondary hover:bg-gray-100 hover:text-crm-primary'
           }`}
       >
-        <item.icon size={20} className={`transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`} />
-        <span className="font-medium">{item.label}</span>
+        <item.icon size={18} className={`transition-transform duration-200 ${isActive ? '' : 'group-hover:scale-105'}`} />
+        <span className="font-medium text-sm">{item.label}</span>
       </Link>
     );
   };
@@ -67,9 +67,9 @@ export default function Layout() {
       return (
         <button
           onClick={() => setSidebarOpen(true)}
-          className="flex flex-col items-center justify-center gap-1 py-2 px-3 text-gray-500 active:text-crm-purple"
+          className="flex flex-col items-center justify-center gap-1 py-1 px-3 text-crm-secondary active:text-crm-primary"
         >
-          <item.icon size={22} />
+          <item.icon size={20} />
           <span className="text-[10px] font-medium">{item.label}</span>
         </button>
       );
@@ -78,32 +78,34 @@ export default function Layout() {
     return (
       <Link
         to={item.path}
-        className={`flex flex-col items-center justify-center gap-1 py-2 px-3 transition-colors ${isActive
-          ? 'text-crm-purple'
-          : 'text-gray-500 active:text-crm-purple'
+        className={`flex flex-col items-center justify-center gap-1 py-1 px-3 transition-colors ${isActive
+          ? 'text-crm-primary'
+          : 'text-crm-secondary active:text-crm-primary'
           }`}
       >
-        <item.icon size={22} className={isActive ? 'animate-bounce' : ''} />
+        <item.icon size={20} className={isActive ? 'scale-110' : ''} />
         <span className="text-[10px] font-medium">{item.label}</span>
       </Link>
     );
   };
 
   return (
-    <div className="min-h-screen bg-crm-background text-gray-800 font-sans">
+    <div className="min-h-screen bg-crm-background text-crm-primary font-sans selection:bg-crm-accent/20">
       {/* Mobile header */}
-      <div className="lg:hidden glass-panel m-4 mb-0 px-4 py-3 flex items-center justify-between sticky top-4 z-30">
+      <div className="lg:hidden bg-white border-b border-crm-border px-4 py-3 flex items-center justify-between sticky top-0 z-30">
         <div className="flex items-center gap-2">
-          <div className="bg-crm-purple p-2 rounded-lg text-white">
+          <div className="bg-crm-primary p-2 rounded-lg text-white">
             <Gift size={20} />
           </div>
-          <span className="font-bold text-lg text-gray-800">Mathaka</span>
+          <span className="font-bold text-lg text-crm-primary">Mathaka</span>
         </div>
         <div className="flex items-center gap-2">
-          <NotificationBell />
+          <div className="text-crm-secondary">
+            <NotificationBell />
+          </div>
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 touch-target flex items-center justify-center text-gray-600"
+            className="p-2 touch-target flex items-center justify-center text-crm-secondary hover:bg-gray-100 rounded-lg"
             aria-label="Toggle menu"
           >
             {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
@@ -111,43 +113,32 @@ export default function Layout() {
         </div>
       </div>
 
-      {/* Sidebar - Floating Glass Panel */}
+      {/* Sidebar - Fixed Flat Panel */}
       <aside className={`
-        fixed inset-y-4 left-4 z-50 w-64 glass-panel transform transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1) lg:translate-x-0
-        ${sidebarOpen ? 'translate-x-0' : '-translate-x-[200%]'}
+        fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-crm-border transform transition-transform duration-300 ease-in-out lg:translate-x-0
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
-        <div className="p-6 border-b border-gray-100/50 hidden lg:flex items-center justify-between">
+        <div className="h-16 flex items-center px-6 border-b border-crm-border">
           <div className="flex items-center gap-3">
-            <div className="bg-crm-purple p-2 rounded-xl text-white shadow-glow-purple">
-              <Gift size={24} />
-            </div>
-            <span className="font-bold text-xl tracking-tight">Mathaka</span>
-          </div>
-        </div>
-
-        {/* Mobile sidebar header */}
-        <div className="p-4 border-b border-gray-100 flex lg:hidden items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="bg-crm-purple p-2 rounded-lg text-white">
+            <div className="bg-crm-primary p-1.5 rounded-lg text-white">
               <Gift size={20} />
             </div>
-            <span className="font-bold text-lg">Mathaka CRM</span>
+            <span className="font-bold text-xl tracking-tight text-crm-primary">Mathaka</span>
           </div>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="p-2 touch-target bg-gray-50 rounded-full"
-            aria-label="Close menu"
+            className="lg:hidden ml-auto p-1 text-gray-400 hover:text-gray-600"
           >
-            <X size={24} className="text-gray-500" />
+            <X size={20} />
           </button>
         </div>
 
-        <nav className="p-4 space-y-2 overflow-y-auto max-h-[calc(100vh-180px)] scrollbar-hide pb-20">
+        <nav className="p-4 space-y-1 overflow-y-auto max-h-[calc(100vh-140px)] scrollbar-hide">
           {navItems.map(item => <NavLink key={item.path} item={item} />)}
 
           {user?.role === 'admin' && (
             <>
-              <div className="pt-6 pb-2 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">
+              <div className="mt-8 mb-2 px-4 text-[11px] font-bold text-crm-secondary uppercase tracking-wider">
                 Admin Controls
               </div>
               {adminItems.map(item => <NavLink key={item.path} item={item} />)}
@@ -155,17 +146,19 @@ export default function Layout() {
           )}
         </nav>
 
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-100/50 bg-white/50 backdrop-blur-sm rounded-b-3xl">
-          <div className="flex items-center justify-between bg-white p-2 rounded-xl shadow-sm border border-gray-100">
-            <div className="min-w-0 flex-1 pl-2">
-              <p className="font-bold text-sm truncate text-gray-800">{user?.name}</p>
-              <p className="text-xs text-crm-purple font-medium capitalize">{user?.role}</p>
+        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-crm-border bg-gray-50/50">
+          <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-white transition-colors">
+            <div className="h-9 w-9 bg-crm-primary text-white rounded-full flex items-center justify-center font-bold text-sm">
+              {user?.name?.[0] || 'U'}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="font-medium text-sm truncate text-crm-primary">{user?.name}</p>
+              <p className="text-xs text-crm-secondary capitalize">{user?.role}</p>
             </div>
             <button
               onClick={logout}
-              className="p-2 text-gray-400 hover:text-red-500 transition-colors touch-target flex items-center justify-center rounded-lg hover:bg-red-50"
+              className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
               title="Logout"
-              aria-label="Logout"
             >
               <LogOut size={18} />
             </button>
@@ -176,28 +169,23 @@ export default function Layout() {
       {/* Overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300"
+          className="fixed inset-0 bg-gray-900/20 backdrop-blur-sm z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Main content */}
-      <main className="lg:ml-[288px] min-h-screen pb-32 lg:pb-0 transition-all duration-300">
+      <main className="lg:ml-64 min-h-screen pb-32 lg:pb-8 transition-all duration-300">
         <div className="p-4 lg:p-8 max-w-7xl mx-auto">
-          {/* Top Bar / Header for Desktop - Hidden on Mobile */}
+          {/* Top Bar / Header for Desktop */}
           <header className="hidden lg:flex justify-between items-center mb-8">
             <div>
-              <h1 className="text-2xl font-bold text-gray-800">Welcome back, {user?.name?.split(' ')[0]} 👋</h1>
-              <p className="text-gray-500 text-sm">Here's what's happening closely.</p>
+              <h1 className="text-2xl font-bold text-crm-primary">Welcome back, {user?.name?.split(' ')[0]} 👋</h1>
+              <p className="text-crm-secondary text-sm mt-1">Here's what's happening today.</p>
             </div>
             <div className="flex items-center gap-4">
-              <div className="bg-white p-2 rounded-full shadow-sm">
+              <div className="bg-white p-2 rounded-full border border-crm-border text-crm-secondary hover:text-crm-primary transition-colors cursor-pointer">
                 <NotificationBell />
-              </div>
-              <div className="h-10 w-10 bg-gradient-to-tr from-crm-purple to-crm-highlight rounded-full overflow-hidden p-[2px]">
-                <div className="bg-white h-full w-full rounded-full flex items-center justify-center">
-                  <span className="font-bold text-crm-purple">{user?.name?.[0]}</span>
-                </div>
               </div>
             </div>
           </header>
@@ -206,8 +194,8 @@ export default function Layout() {
       </main>
 
       {/* Mobile bottom navigation */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 glass-panel rounded-b-none border-t border-white/20 z-30 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
-        <div className="flex items-center justify-around translate-y-[-5px]">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-crm-border z-30 pb-safe">
+        <div className="flex items-center justify-around translate-y-[-5px] pt-3">
           {bottomNavItems.map(item => (
             <BottomNavLink key={item.path} item={item} />
           ))}

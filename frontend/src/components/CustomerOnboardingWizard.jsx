@@ -124,31 +124,30 @@ export default function CustomerOnboardingWizard({ onClose, onComplete }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
         {/* Header */}
-        <div className="p-4 border-b flex justify-between items-center bg-gradient-to-r from-purple-50 to-pink-50">
-          <h2 className="text-xl font-bold text-purple-800">New Customer Setup</h2>
-          <button onClick={onClose} className="p-2 hover:bg-white/50 rounded-lg">
+        <div className="p-4 border-b border-crm-border flex justify-between items-center bg-white">
+          <h2 className="text-xl font-bold text-crm-primary">New Customer Setup</h2>
+          <button onClick={onClose} className="p-2 hover:bg-crm-background rounded-lg text-crm-secondary hover:text-crm-primary">
             <X size={20} />
           </button>
         </div>
 
         {/* Progress Steps */}
-        <div className="px-6 py-4 border-b bg-gray-50">
+        <div className="px-6 py-4 border-b border-crm-border bg-crm-background">
           <div className="flex items-center justify-between">
             {steps.map((s, i) => (
               <div key={s.num} className="flex items-center">
-                <div className={`flex items-center gap-2 ${step >= s.num ? 'text-purple-600' : 'text-gray-400'}`}>
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                    step > s.num ? 'bg-green-500 text-white' :
-                    step === s.num ? 'bg-purple-600 text-white' : 'bg-gray-200'
-                  }`}>
+                <div className={`flex items-center gap-2 ${step >= s.num ? 'text-crm-primary' : 'text-crm-secondary'}`}>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step > s.num ? 'bg-crm-success text-white' :
+                      step === s.num ? 'bg-crm-primary text-white' : 'bg-gray-200'
+                    }`}>
                     {step > s.num ? <Check size={16} /> : <s.icon size={16} />}
                   </div>
                   <span className="text-sm font-medium hidden sm:block">{s.title}</span>
                 </div>
                 {i < steps.length - 1 && (
-                  <ChevronRight className="mx-2 text-gray-300" size={20} />
+                  <ChevronRight className="mx-2 text-crm-border" size={20} />
                 )}
               </div>
             ))}
@@ -160,8 +159,8 @@ export default function CustomerOnboardingWizard({ onClose, onComplete }) {
           {/* Step 1: Customer Info */}
           {step === 1 && (
             <div className="space-y-4">
-              <p className="text-gray-600 mb-4">Let's start with the basic customer information.</p>
-              
+              <p className="text-crm-secondary mb-4">Let's start with the basic customer information.</p>
+
               {duplicateWarning && (
                 <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-2">
                   <AlertTriangle className="text-yellow-600 flex-shrink-0 mt-0.5" size={18} />
@@ -173,42 +172,42 @@ export default function CustomerOnboardingWizard({ onClose, onComplete }) {
               )}
 
               <div>
-                <label className="block text-sm font-medium mb-1">Name *</label>
+                <label className="block text-sm font-medium mb-1 text-crm-secondary">Name *</label>
                 <input
                   type="text"
                   value={customerForm.name}
                   onChange={(e) => setCustomerForm({ ...customerForm, name: e.target.value })}
-                  className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-crm-border rounded-xl focus:ring-1 focus:ring-crm-primary outline-none"
                   placeholder="Customer name"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">WhatsApp Number *</label>
+                <label className="block text-sm font-medium mb-1 text-crm-secondary">WhatsApp Number *</label>
                 <input
                   type="text"
                   value={customerForm.whatsapp}
                   onChange={(e) => setCustomerForm({ ...customerForm, whatsapp: e.target.value })}
                   onBlur={checkDuplicate}
-                  className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-crm-border rounded-xl focus:ring-1 focus:ring-crm-primary outline-none"
                   placeholder="+971XXXXXXXXX"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Country</label>
+                <label className="block text-sm font-medium mb-1 text-crm-secondary">Country</label>
                 <input
                   type="text"
                   value={customerForm.country}
                   onChange={(e) => setCustomerForm({ ...customerForm, country: e.target.value })}
-                  className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-crm-border rounded-xl focus:ring-1 focus:ring-crm-primary outline-none"
                   placeholder="UAE, Qatar, Saudi..."
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Notes</label>
+                <label className="block text-sm font-medium mb-1 text-crm-secondary">Notes</label>
                 <textarea
                   value={customerForm.notes}
                   onChange={(e) => setCustomerForm({ ...customerForm, notes: e.target.value })}
-                  className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-crm-border rounded-xl focus:ring-1 focus:ring-crm-primary outline-none"
                   rows={2}
                   placeholder="Any notes about this customer..."
                 />
@@ -219,42 +218,42 @@ export default function CustomerOnboardingWizard({ onClose, onComplete }) {
           {/* Step 2: Recipients */}
           {step === 2 && (
             <div className="space-y-4">
-              <p className="text-gray-600 mb-4">Add recipients in Sri Lanka who will receive gifts.</p>
-              
+              <p className="text-crm-secondary mb-4">Add recipients in Sri Lanka who will receive gifts.</p>
+
               {/* Add Recipient Form */}
-              <div className="p-4 bg-purple-50 rounded-xl space-y-3">
+              <div className="p-4 bg-crm-background rounded-xl space-y-3 border border-crm-border">
                 <div className="grid sm:grid-cols-2 gap-3">
                   <input
                     value={recipientForm.name}
                     onChange={(e) => setRecipientForm({ ...recipientForm, name: e.target.value })}
                     placeholder="Recipient name *"
-                    className="px-3 py-2 border rounded-lg"
+                    className="px-3 py-2 border border-crm-border rounded-lg"
                   />
                   <input
                     value={recipientForm.relationship}
                     onChange={(e) => setRecipientForm({ ...recipientForm, relationship: e.target.value })}
                     placeholder="Relationship (Mother, Wife...)"
-                    className="px-3 py-2 border rounded-lg"
+                    className="px-3 py-2 border border-crm-border rounded-lg"
                   />
                 </div>
                 <input
                   value={recipientForm.phone}
                   onChange={(e) => setRecipientForm({ ...recipientForm, phone: e.target.value })}
                   placeholder="Phone number"
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className="w-full px-3 py-2 border border-crm-border rounded-lg"
                 />
                 <textarea
                   value={recipientForm.address}
                   onChange={(e) => setRecipientForm({ ...recipientForm, address: e.target.value })}
                   placeholder="Delivery address"
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className="w-full px-3 py-2 border border-crm-border rounded-lg"
                   rows={2}
                 />
                 <button
                   type="button"
                   onClick={addRecipient}
                   disabled={!recipientForm.name}
-                  className="w-full py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full py-2 btn-ghost border border-crm-border text-crm-primary rounded-lg disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   <Plus size={18} /> Add Recipient
                 </button>
@@ -263,14 +262,14 @@ export default function CustomerOnboardingWizard({ onClose, onComplete }) {
               {/* Recipients List */}
               {recipients.length > 0 && (
                 <div className="space-y-2">
-                  <h3 className="font-medium text-sm text-gray-600">Added Recipients ({recipients.length})</h3>
+                  <h3 className="font-medium text-sm text-crm-secondary">Added Recipients ({recipients.length})</h3>
                   {recipients.map(r => (
-                    <div key={r.tempId} className="p-3 bg-white border rounded-lg flex justify-between items-start">
+                    <div key={r.tempId} className="p-3 bg-white border border-crm-border rounded-lg flex justify-between items-start">
                       <div>
-                        <p className="font-medium">{r.name} {r.relationship && <span className="text-gray-500">({r.relationship})</span>}</p>
-                        {r.address && <p className="text-sm text-gray-500">{r.address}</p>}
+                        <p className="font-medium text-crm-primary">{r.name} {r.relationship && <span className="text-crm-secondary">({r.relationship})</span>}</p>
+                        {r.address && <p className="text-sm text-crm-secondary">{r.address}</p>}
                       </div>
-                      <button onClick={() => removeRecipient(r.tempId)} className="p-1 text-red-500 hover:bg-red-50 rounded">
+                      <button onClick={() => removeRecipient(r.tempId)} className="p-1 text-crm-danger hover:bg-red-50 rounded">
                         <Trash2 size={16} />
                       </button>
                     </div>
@@ -283,29 +282,29 @@ export default function CustomerOnboardingWizard({ onClose, onComplete }) {
           {/* Step 3: Important Dates */}
           {step === 3 && (
             <div className="space-y-4">
-              <p className="text-gray-600 mb-4">Add birthdays, anniversaries, and other important dates.</p>
-              
+              <p className="text-crm-secondary mb-4">Add birthdays, anniversaries, and other important dates.</p>
+
               {/* Add Date Form */}
-              <div className="p-4 bg-pink-50 rounded-xl space-y-3">
+              <div className="p-4 bg-crm-background rounded-xl space-y-3 border border-crm-border">
                 <div className="grid sm:grid-cols-2 gap-3">
                   <input
                     value={dateForm.title}
                     onChange={(e) => setDateForm({ ...dateForm, title: e.target.value })}
                     placeholder="Event (Birthday, Anniversary...) *"
-                    className="px-3 py-2 border rounded-lg"
+                    className="px-3 py-2 border border-crm-border rounded-lg"
                   />
                   <input
                     type="date"
                     value={dateForm.date}
                     onChange={(e) => setDateForm({ ...dateForm, date: e.target.value })}
-                    className="px-3 py-2 border rounded-lg"
+                    className="px-3 py-2 border border-crm-border rounded-lg"
                   />
                 </div>
                 {recipients.length > 0 && (
                   <select
                     value={dateForm.recipient_id}
                     onChange={(e) => setDateForm({ ...dateForm, recipient_id: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg"
+                    className="w-full px-3 py-2 border border-crm-border rounded-lg"
                   >
                     <option value="">For whom? (optional)</option>
                     {recipients.map(r => <option key={r.tempId} value={r.tempId}>{r.name}</option>)}
@@ -315,14 +314,14 @@ export default function CustomerOnboardingWizard({ onClose, onComplete }) {
                   value={dateForm.notes}
                   onChange={(e) => setDateForm({ ...dateForm, notes: e.target.value })}
                   placeholder="Notes (gift preferences, etc.)"
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className="w-full px-3 py-2 border border-crm-border rounded-lg"
                   rows={2}
                 />
                 <button
                   type="button"
                   onClick={addDate}
                   disabled={!dateForm.title || !dateForm.date}
-                  className="w-full py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full py-2 btn-ghost border border-crm-border text-crm-primary rounded-lg disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   <Plus size={18} /> Add Date
                 </button>
@@ -331,14 +330,14 @@ export default function CustomerOnboardingWizard({ onClose, onComplete }) {
               {/* Dates List */}
               {dates.length > 0 && (
                 <div className="space-y-2">
-                  <h3 className="font-medium text-sm text-gray-600">Added Dates ({dates.length})</h3>
+                  <h3 className="font-medium text-sm text-crm-secondary">Added Dates ({dates.length})</h3>
                   {dates.map(d => (
-                    <div key={d.tempId} className="p-3 bg-white border rounded-lg flex justify-between items-center">
+                    <div key={d.tempId} className="p-3 bg-white border border-crm-border rounded-lg flex justify-between items-center">
                       <div>
-                        <p className="font-medium">{d.title}</p>
-                        <p className="text-sm text-purple-600">{d.date}</p>
+                        <p className="font-medium text-crm-primary">{d.title}</p>
+                        <p className="text-sm text-crm-accent">{d.date}</p>
                       </div>
-                      <button onClick={() => removeDate(d.tempId)} className="p-1 text-red-500 hover:bg-red-50 rounded">
+                      <button onClick={() => removeDate(d.tempId)} className="p-1 text-crm-danger hover:bg-red-50 rounded">
                         <Trash2 size={16} />
                       </button>
                     </div>
@@ -350,16 +349,16 @@ export default function CustomerOnboardingWizard({ onClose, onComplete }) {
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t bg-gray-50 flex justify-between">
+        <div className="p-4 border-t border-crm-border bg-gray-50 flex justify-between">
           {step > 1 ? (
             <button
               onClick={() => setStep(step - 1)}
-              className="px-4 py-2 border rounded-lg flex items-center gap-2 hover:bg-gray-100"
+              className="px-4 py-2 border border-crm-border text-crm-secondary rounded-lg flex items-center gap-2 hover:bg-white transition-colors"
             >
               <ChevronLeft size={18} /> Back
             </button>
           ) : (
-            <button onClick={onClose} className="px-4 py-2 border rounded-lg hover:bg-gray-100">
+            <button onClick={onClose} className="px-4 py-2 border border-crm-border text-crm-secondary rounded-lg hover:bg-white transition-colors">
               Cancel
             </button>
           )}
@@ -368,7 +367,7 @@ export default function CustomerOnboardingWizard({ onClose, onComplete }) {
             <button
               onClick={handleCreateCustomer}
               disabled={loading || !customerForm.name || !customerForm.whatsapp}
-              className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 flex items-center gap-2"
+              className="px-6 py-2 btn-primary rounded-lg disabled:opacity-50 flex items-center gap-2"
             >
               {loading ? 'Creating...' : 'Next'} <ChevronRight size={18} />
             </button>
@@ -378,14 +377,14 @@ export default function CustomerOnboardingWizard({ onClose, onComplete }) {
             <div className="flex gap-2">
               <button
                 onClick={() => setStep(3)}
-                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                className="px-4 py-2 text-crm-secondary hover:text-crm-primary hover:bg-crm-background rounded-lg"
               >
                 Skip
               </button>
               <button
                 onClick={saveRecipients}
                 disabled={loading}
-                className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 flex items-center gap-2"
+                className="px-6 py-2 btn-primary rounded-lg disabled:opacity-50 flex items-center gap-2"
               >
                 {loading ? 'Saving...' : recipients.length > 0 ? 'Save & Continue' : 'Next'} <ChevronRight size={18} />
               </button>
@@ -396,14 +395,14 @@ export default function CustomerOnboardingWizard({ onClose, onComplete }) {
             <div className="flex gap-2">
               <button
                 onClick={() => onComplete(customerId)}
-                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                className="px-4 py-2 text-crm-secondary hover:text-crm-primary hover:bg-crm-background rounded-lg"
               >
                 Skip & Finish
               </button>
               <button
                 onClick={saveDatesAndFinish}
                 disabled={loading}
-                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center gap-2"
+                className="px-6 py-2 bg-crm-success text-white rounded-lg hover:bg-emerald-600 disabled:opacity-50 flex items-center gap-2 shadow-sm"
               >
                 {loading ? 'Saving...' : <><Check size={18} /> Complete Setup</>}
               </button>
