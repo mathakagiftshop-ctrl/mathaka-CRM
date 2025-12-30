@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../api';
-import { ArrowLeft, MessageCircle, Plus, Trash2, Edit2, Calendar, User, MapPin } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Plus, Trash2, Edit2, Calendar, User, MapPin, Zap, FileText } from 'lucide-react';
+import QuickOrderModal from '../components/QuickOrderModal';
 
 export default function CustomerDetail() {
   const { id } = useParams();
@@ -12,6 +13,7 @@ export default function CustomerDetail() {
   const [form, setForm] = useState({});
   const [showRecipientModal, setShowRecipientModal] = useState(false);
   const [showDateModal, setShowDateModal] = useState(false);
+  const [showQuickOrder, setShowQuickOrder] = useState(false);
   const [recipientForm, setRecipientForm] = useState({ name: '', phone: '', address: '', relationship: '' });
   const [dateForm, setDateForm] = useState({ title: '', date: '', recipient_id: '', notes: '' });
 
@@ -172,10 +174,18 @@ export default function CustomerDetail() {
       {/* Order History */}
       <div className="bg-white rounded-xl shadow-sm">
         <div className="p-4 border-b flex justify-between items-center">
-          <h2 className="font-semibold">Order History</h2>
-          <Link to={`/invoices/new?customer=${id}`} className="text-purple-600 text-sm flex items-center gap-1">
-            <Plus size={16} /> New Invoice
-          </Link>
+          <h2 className="font-semibold flex items-center gap-2"><FileText size={18} /> Order History</h2>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowQuickOrder(true)}
+              className="text-orange-600 text-sm flex items-center gap-1 hover:bg-orange-50 px-3 py-1.5 rounded-lg border border-orange-200"
+            >
+              <Zap size={16} /> Quick Order
+            </button>
+            <Link to={`/invoices/new?customer=${id}`} className="text-purple-600 text-sm flex items-center gap-1 hover:bg-purple-50 px-3 py-1.5 rounded-lg">
+              <Plus size={16} /> Full Order
+            </Link>
+          </div>
         </div>
         <div className="divide-y">
           {customer.invoices.length === 0 ? (
@@ -236,6 +246,14 @@ export default function CustomerDetail() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Quick Order Modal */}
+      {showQuickOrder && (
+        <QuickOrderModal
+          onClose={() => setShowQuickOrder(false)}
+          preselectedCustomer={id}
+        />
       )}
     </div>
   );

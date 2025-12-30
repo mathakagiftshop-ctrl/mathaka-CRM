@@ -20,6 +20,7 @@ export default function Layout() {
     { path: '/products', icon: Package, label: 'Products' },
     { path: '/package-assistant', icon: Sparkles, label: 'AI Assistant' },
     { path: '/vendors', icon: Truck, label: 'Vendors' },
+    { path: '/vendor-orders', icon: Gift, label: 'Vendor Orders' },
     { path: '/expenses', icon: DollarSign, label: 'Expenses' },
     { path: '/important-dates', icon: Calendar, label: 'Important Dates' },
     { path: '/reports', icon: BarChart3, label: 'Reports' },

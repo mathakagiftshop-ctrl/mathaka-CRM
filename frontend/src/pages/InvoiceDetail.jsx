@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../api';
-import { ArrowLeft, Download, MessageCircle, Receipt, Trash2, CheckCircle, Package, Truck, Gift, Camera, DollarSign, Plus, X, TrendingUp, Box } from 'lucide-react';
+import { ArrowLeft, Download, MessageCircle, Receipt, Trash2, CheckCircle, Package, Truck, Gift, Camera, DollarSign, Plus, X, TrendingUp, Box, Clock, Edit } from 'lucide-react';
 import { generateInvoicePDF, generateReceiptPDF, generateCustomerInvoicePDF } from '../utils/pdfGenerator';
 
 export default function InvoiceDetail() {
@@ -15,6 +15,12 @@ export default function InvoiceDetail() {
   const [loading, setLoading] = useState(true);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentForm, setPaymentForm] = useState({ amount: '', payment_method: 'bank_transfer', notes: '' });
+  
+  // Vendor orders state
+  const [vendorOrders, setVendorOrders] = useState([]);
+  const [vendors, setVendors] = useState([]);
+  const [showVendorModal, setShowVendorModal] = useState(false);
+  const [vendorForm, setVendorForm] = useState({ vendor_id: '', description: '', total_amount: '', notes: '' });
 
   const fetchInvoice = () => {
     Promise.all([
@@ -22,13 +28,17 @@ export default function InvoiceDetail() {
       api.get(`/receipts/invoice/${id}`),
       api.get(`/payments/invoice/${id}`),
       api.get(`/invoices/${id}/photos`),
-      api.get('/settings')
-    ]).then(([inv, rec, pay, ph, set]) => {
+      api.get('/settings'),
+      api.get(`/vendor-orders/invoice/${id}`),
+      api.get('/vendors')
+    ]).then(([inv, rec, pay, ph, set, vo, vend]) => {
       setInvoice(inv.data);
       setReceipt(rec.data);
       setPayments(pay.data || []);
       setPhotos(ph.data);
       setSettings(set.data);
+      setVendorOrders(vo.data || []);
+      setVendors(vend.data || []);
       setLoading(false);
     });
   };
@@ -284,9 +294,14 @@ export default function InvoiceDetail() {
           </button>
         )}
         {['pending', 'partial'].includes(invoice.status) && (
-          <button onClick={cancelInvoice} className="flex items-center gap-2 px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50">
-            Cancel
-          </button>
+          <>
+            <Link to={`/invoices/${id}/edit`} className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600">
+              <Edit size={18} /> Edit
+            </Link>
+            <button onClick={cancelInvoice} className="flex items-center gap-2 px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50">
+              Cancel
+            </button>
+          </>
         )}
         <button onClick={deleteInvoice} className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg">
           <Trash2 size={18} />
@@ -530,9 +545,30 @@ export default function InvoiceDetail() {
               />
             </div>
             {['pending', 'partial'].includes(invoice.status) && getBalanceDue() > 0 && (
-              <p className="text-sm text-orange-600 mt-2">
-                Balance due: Rs. {getBalanceDue().toLocaleString()}
-              </p>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mt-2">
+                <p className="text-sm text-orange-600 font-medium">
+                  Balance due: Rs. {getBalanceDue().toLocaleString()}
+                </p>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={downloadCustomerPDF} 
+                    className="flex items-center gap-1 px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-sm hover:bg-blue-200"
+                  >
+                    <Download size={14} /> Invoice with Balance
+                  </button>
+                  <button 
+                    onClick={() => {
+                      const message = encodeURIComponent(
+                        `Hi ${invoice.customer_name}!\n\nThis is a friendly reminder for your pending balance.\n\nInvoice: ${invoice.invoice_number}\nTotal: Rs. ${parseFloat(invoice.total).toLocaleString()}\nPaid: Rs. ${parseFloat(invoice.amount_paid || 0).toLocaleString()}\nBalance Due: Rs. ${getBalanceDue().toLocaleString()}\n\nThank you! 🙏`
+                      );
+                      window.open(`https://wa.me/${invoice.customer_whatsapp.replace(/[^0-9]/g, '')}?text=${message}`, '_blank');
+                    }}
+                    className="flex items-center gap-1 px-3 py-1.5 bg-green-100 text-green-700 rounded-lg text-sm hover:bg-green-200"
+                  >
+                    <MessageCircle size={14} /> Send Reminder
+                  </button>
+                </div>
+              </div>
             )}
           </div>
 
@@ -563,6 +599,141 @@ export default function InvoiceDetail() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Vendor Orders Section */}
+      <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-semibold flex items-center gap-2">
+            <Truck size={18} /> Vendor Assignments
+          </h2>
+          <button
+            onClick={() => setShowVendorModal(true)}
+            className="flex items-center gap-1 px-3 py-1.5 bg-orange-100 text-orange-700 rounded-lg text-sm hover:bg-orange-200"
+          >
+            <Plus size={16} /> Assign Vendor
+          </button>
+        </div>
+
+        {vendorOrders.length === 0 ? (
+          <p className="text-gray-500 text-sm text-center py-4">No vendors assigned yet</p>
+        ) : (
+          <div className="space-y-3">
+            {vendorOrders.map(vo => (
+              <div key={vo.id} className="border rounded-lg p-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{vo.vendor_name}</span>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${
+                        vo.status === 'completed' ? 'bg-green-100 text-green-700' :
+                        vo.status === 'in_progress' ? 'bg-yellow-100 text-yellow-700' :
+                        vo.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                        'bg-blue-100 text-blue-700'
+                      }`}>
+                        {vo.status === 'in_progress' ? 'In Progress' : vo.status.charAt(0).toUpperCase() + vo.status.slice(1)}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600">{vo.description}</p>
+                    <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
+                      <span>Total: Rs. {parseFloat(vo.total_amount).toLocaleString()}</span>
+                      <span className="text-green-600">Paid: Rs. {parseFloat(vo.amount_paid || 0).toLocaleString()}</span>
+                      {vo.balance_due > 0 && (
+                        <span className="text-red-600">Due: Rs. {parseFloat(vo.balance_due).toLocaleString()}</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+            <Link to="/vendor-orders" className="block text-center text-sm text-purple-600 hover:underline mt-2">
+              View all vendor orders →
+            </Link>
+          </div>
+        )}
+      </div>
+
+      {/* Vendor Assignment Modal */}
+      {showVendorModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold">Assign to Vendor</h2>
+              <button onClick={() => setShowVendorModal(false)} className="p-1 hover:bg-gray-100 rounded">
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              try {
+                await api.post('/vendor-orders', {
+                  invoice_id: id,
+                  ...vendorForm,
+                  total_amount: parseFloat(vendorForm.total_amount) || 0
+                });
+                setShowVendorModal(false);
+                setVendorForm({ vendor_id: '', description: '', total_amount: '', notes: '' });
+                fetchInvoice();
+              } catch (err) {
+                alert(err.response?.data?.error || 'Failed to assign vendor');
+              }
+            }} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Vendor *</label>
+                <select
+                  value={vendorForm.vendor_id}
+                  onChange={(e) => setVendorForm({ ...vendorForm, vendor_id: e.target.value })}
+                  className="w-full border rounded-lg px-3 py-2"
+                  required
+                >
+                  <option value="">Select Vendor</option>
+                  {vendors.map(v => (
+                    <option key={v.id} value={v.id}>{v.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Description *</label>
+                <input
+                  value={vendorForm.description}
+                  onChange={(e) => setVendorForm({ ...vendorForm, description: e.target.value })}
+                  placeholder="e.g., Birthday cake - 2kg chocolate"
+                  className="w-full border rounded-lg px-3 py-2"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Amount (Rs.)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={vendorForm.total_amount}
+                  onChange={(e) => setVendorForm({ ...vendorForm, total_amount: e.target.value })}
+                  placeholder="Amount to pay vendor"
+                  className="w-full border rounded-lg px-3 py-2"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Notes</label>
+                <textarea
+                  value={vendorForm.notes}
+                  onChange={(e) => setVendorForm({ ...vendorForm, notes: e.target.value })}
+                  placeholder="Special instructions..."
+                  className="w-full border rounded-lg px-3 py-2"
+                  rows={2}
+                />
+              </div>
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setShowVendorModal(false)} className="flex-1 px-4 py-2 border rounded-lg">
+                  Cancel
+                </button>
+                <button type="submit" className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">
+                  Assign
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 

@@ -211,12 +211,21 @@ export default async function handler(req, res) {
         const status = url.searchParams.get('status');
         const customer_id = url.searchParams.get('customer_id');
         const order_status = url.searchParams.get('order_status');
+        const search = url.searchParams.get('search');
+        const dateFrom = url.searchParams.get('dateFrom');
+        const dateTo = url.searchParams.get('dateTo');
         let query = supabase.from('invoices').select(`*, customers (name, whatsapp), delivery_zones (name, delivery_fee)`);
         if (status) query = query.eq('status', status);
         if (customer_id) query = query.eq('customer_id', customer_id);
         if (order_status) query = query.eq('order_status', order_status);
+        if (dateFrom) query = query.gte('created_at', `${dateFrom}T00:00:00`);
+        if (dateTo) query = query.lte('created_at', `${dateTo}T23:59:59`);
         const { data } = await query.order('created_at', { ascending: false });
-        const invoices = (data || []).map(inv => ({ ...inv, customer_name: inv.customers?.name, customer_whatsapp: inv.customers?.whatsapp, delivery_zone_name: inv.delivery_zones?.name }));
+        let invoices = (data || []).map(inv => ({ ...inv, customer_name: inv.customers?.name, customer_whatsapp: inv.customers?.whatsapp, delivery_zone_name: inv.delivery_zones?.name }));
+        if (search) {
+          const searchLower = search.toLowerCase();
+          invoices = invoices.filter(inv => inv.invoice_number?.toLowerCase().includes(searchLower) || inv.customer_name?.toLowerCase().includes(searchLower));
+        }
         return json(res, invoices);
       }
       if (method === 'GET' && segments[1] && segments[2] === 'photos') {
@@ -226,9 +235,14 @@ export default async function handler(req, res) {
       if (method === 'GET' && segments[1]) {
         const { data: invoice } = await supabase.from('invoices').select(`*, customers (name, whatsapp, country), recipients (name, phone, address)`).eq('id', segments[1]).single();
         if (!invoice) return error(res, 'Not found', 404);
-        const { data: items } = await supabase.from('invoice_items').select(`*, categories (name), vendors (name)`).eq('invoice_id', segments[1]);
-        const formattedItems = (items || []).map(item => ({ ...item, category_name: item.categories?.name, vendor_name: item.vendors?.name }));
-        return json(res, { ...invoice, customer_name: invoice.customers?.name, customer_whatsapp: invoice.customers?.whatsapp, customer_country: invoice.customers?.country, recipient_name: invoice.recipients?.name, recipient_phone: invoice.recipients?.phone, recipient_address: invoice.recipients?.address, items: formattedItems });
+        // Get packages for this invoice
+        const { data: packages } = await supabase.from('invoice_packages').select('*').eq('invoice_id', segments[1]).order('id');
+        const { data: items } = await supabase.from('invoice_items').select(`*, categories (name), vendors (name), products (name, cost_price, retail_price)`).eq('invoice_id', segments[1]);
+        const formattedItems = (items || []).map(item => ({ ...item, category_name: item.categories?.name, vendor_name: item.vendors?.name, product_name: item.products?.name }));
+        // Group items by package
+        const packagesWithItems = (packages || []).map(pkg => ({ ...pkg, items: formattedItems.filter(item => item.package_id === pkg.id) }));
+        const standaloneItems = formattedItems.filter(item => !item.package_id);
+        return json(res, { ...invoice, customer_name: invoice.customers?.name, customer_whatsapp: invoice.customers?.whatsapp, customer_country: invoice.customers?.country, recipient_name: invoice.recipients?.name, recipient_phone: invoice.recipients?.phone, recipient_address: invoice.recipients?.address, packages: packagesWithItems, items: standaloneItems, all_items: formattedItems });
       }
       if (method === 'POST' && segments[1] && segments[2] === 'photos') {
         const { photo_url, caption } = req.body;
@@ -236,9 +250,23 @@ export default async function handler(req, res) {
         return json(res, data);
       }
       if (method === 'POST' && !segments[1]) {
-        const { customer_id, recipient_id, items, discount, notes, delivery_zone_id, delivery_fee, gift_message } = req.body;
-        const subtotal = items.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
+        const { customer_id, recipient_id, items, packages, discount, notes, delivery_zone_id, delivery_fee, gift_message } = req.body;
+        let subtotal = 0, totalCost = 0, totalPackagingCost = 0;
+        if (packages && packages.length > 0) {
+          packages.forEach(pkg => {
+            subtotal += parseFloat(pkg.package_price) || 0;
+            totalPackagingCost += parseFloat(pkg.packaging_cost) || 0;
+            (pkg.items || []).forEach(item => { totalCost += (parseFloat(item.cost_price) || 0) * (item.quantity || 1); });
+          });
+          totalCost += totalPackagingCost;
+        } else if (items && items.length > 0) {
+          subtotal = items.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
+          totalCost = items.reduce((sum, item) => sum + ((item.cost_price || 0) * item.quantity), 0);
+        }
         const total = subtotal - (discount || 0) + (delivery_fee || 0);
+        const profit = total - totalCost - (delivery_fee || 0);
+        const profitMargin = total > 0 ? (profit / total) * 100 : 0;
+        const markupPercentage = totalCost > 0 ? (profit / totalCost) * 100 : 0;
         // Generate invoice number
         const { data: prefixSetting } = await supabase.from('settings').select('value').eq('key', 'invoice_prefix').single();
         const prefix = prefixSetting?.value || 'INV';
@@ -247,10 +275,63 @@ export default async function handler(req, res) {
         let nextNum = 1;
         if (lastInvoice) { const parts = lastInvoice.invoice_number.split('-'); nextNum = parseInt(parts[2]) + 1; }
         const invoice_number = `${prefix}-${year}-${String(nextNum).padStart(4, '0')}`;
-        const { data: invoice } = await supabase.from('invoices').insert({ invoice_number, customer_id, recipient_id: recipient_id || null, subtotal, discount: discount || 0, total, notes, delivery_zone_id: delivery_zone_id || null, delivery_fee: delivery_fee || 0, gift_message: gift_message || null, order_status: 'received' }).select().single();
-        const invoiceItems = items.map(item => ({ invoice_id: invoice.id, category_id: item.category_id || null, vendor_id: item.vendor_id || null, description: item.description, quantity: item.quantity, unit_price: item.unit_price, total: item.quantity * item.unit_price }));
-        await supabase.from('invoice_items').insert(invoiceItems);
+        const { data: invoice } = await supabase.from('invoices').insert({ invoice_number, customer_id, recipient_id: recipient_id || null, subtotal, discount: discount || 0, total, total_cost: totalCost, total_packaging_cost: totalPackagingCost, profit_margin: profitMargin, markup_percentage: markupPercentage, notes, delivery_zone_id: delivery_zone_id || null, delivery_fee: delivery_fee || 0, gift_message: gift_message || null, order_status: 'received' }).select().single();
+        // Insert packages and items
+        if (packages && packages.length > 0) {
+          for (const pkg of packages) {
+            const { data: packageData } = await supabase.from('invoice_packages').insert({ invoice_id: invoice.id, package_name: pkg.package_name, package_price: pkg.package_price, packaging_cost: pkg.packaging_cost || 0, notes: pkg.notes || null }).select().single();
+            if (pkg.items && pkg.items.length > 0) {
+              const packageItems = pkg.items.map(item => ({ invoice_id: invoice.id, package_id: packageData.id, product_id: item.product_id || null, category_id: item.category_id || null, vendor_id: item.vendor_id || null, description: item.description, quantity: item.quantity || 1, unit_price: item.unit_price || 0, cost_price: item.cost_price || 0, total: (item.quantity || 1) * (item.unit_price || 0) }));
+              await supabase.from('invoice_items').insert(packageItems);
+            }
+          }
+        } else if (items && items.length > 0) {
+          const invoiceItems = items.map(item => ({ invoice_id: invoice.id, package_id: null, product_id: item.product_id || null, category_id: item.category_id || null, vendor_id: item.vendor_id || null, description: item.description, quantity: item.quantity, unit_price: item.unit_price, cost_price: item.cost_price || 0, total: item.quantity * item.unit_price }));
+          await supabase.from('invoice_items').insert(invoiceItems);
+        }
         return json(res, { id: invoice.id, invoice_number });
+      }
+      if (method === 'PUT' && segments[1]) {
+        const { customer_id, recipient_id, items, packages, discount, notes, delivery_zone_id, delivery_fee, gift_message } = req.body;
+        // Check if invoice exists and is editable
+        const { data: existingInvoice } = await supabase.from('invoices').select('status').eq('id', segments[1]).single();
+        if (!existingInvoice) return error(res, 'Invoice not found', 404);
+        if (existingInvoice.status === 'paid') return error(res, 'Cannot edit a paid invoice', 400);
+        if (existingInvoice.status === 'cancelled') return error(res, 'Cannot edit a cancelled invoice', 400);
+        let subtotal = 0, totalCost = 0, totalPackagingCost = 0;
+        if (packages && packages.length > 0) {
+          packages.forEach(pkg => {
+            subtotal += parseFloat(pkg.package_price) || 0;
+            totalPackagingCost += parseFloat(pkg.packaging_cost) || 0;
+            (pkg.items || []).forEach(item => { totalCost += (parseFloat(item.cost_price) || 0) * (item.quantity || 1); });
+          });
+          totalCost += totalPackagingCost;
+        } else if (items && items.length > 0) {
+          subtotal = items.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
+          totalCost = items.reduce((sum, item) => sum + ((item.cost_price || 0) * item.quantity), 0);
+        }
+        const total = subtotal - (discount || 0) + (delivery_fee || 0);
+        const profit = total - totalCost - (delivery_fee || 0);
+        const profitMargin = total > 0 ? (profit / total) * 100 : 0;
+        const markupPercentage = totalCost > 0 ? (profit / totalCost) * 100 : 0;
+        await supabase.from('invoices').update({ customer_id, recipient_id: recipient_id || null, subtotal, discount: discount || 0, total, total_cost: totalCost, total_packaging_cost: totalPackagingCost, profit_margin: profitMargin, markup_percentage: markupPercentage, notes, delivery_zone_id: delivery_zone_id || null, delivery_fee: delivery_fee || 0, gift_message: gift_message || null }).eq('id', segments[1]);
+        // Delete existing packages and items
+        await supabase.from('invoice_items').delete().eq('invoice_id', segments[1]);
+        await supabase.from('invoice_packages').delete().eq('invoice_id', segments[1]);
+        // Insert new packages and items
+        if (packages && packages.length > 0) {
+          for (const pkg of packages) {
+            const { data: packageData } = await supabase.from('invoice_packages').insert({ invoice_id: parseInt(segments[1]), package_name: pkg.package_name, package_price: pkg.package_price, packaging_cost: pkg.packaging_cost || 0, notes: pkg.notes || null }).select().single();
+            if (pkg.items && pkg.items.length > 0) {
+              const packageItems = pkg.items.map(item => ({ invoice_id: parseInt(segments[1]), package_id: packageData.id, product_id: item.product_id || null, category_id: item.category_id || null, vendor_id: item.vendor_id || null, description: item.description, quantity: item.quantity || 1, unit_price: item.unit_price || 0, cost_price: item.cost_price || 0, total: (item.quantity || 1) * (item.unit_price || 0) }));
+              await supabase.from('invoice_items').insert(packageItems);
+            }
+          }
+        } else if (items && items.length > 0) {
+          const invoiceItems = items.map(item => ({ invoice_id: parseInt(segments[1]), package_id: null, product_id: item.product_id || null, category_id: item.category_id || null, vendor_id: item.vendor_id || null, description: item.description, quantity: item.quantity, unit_price: item.unit_price, cost_price: item.cost_price || 0, total: item.quantity * item.unit_price }));
+          await supabase.from('invoice_items').insert(invoiceItems);
+        }
+        return json(res, { message: 'Invoice updated successfully' });
       }
       if (method === 'PATCH' && segments[1] && segments[2] === 'order-status') {
         const { order_status } = req.body;
@@ -379,18 +460,21 @@ export default async function handler(req, res) {
     // PRODUCTS
     if (segments[0] === 'products') {
       if (method === 'GET') {
-        const { data } = await supabase.from('products').select(`*, categories (name)`).eq('is_active', true).order('name');
+        const type = url.searchParams.get('type');
+        let query = supabase.from('products').select(`*, categories (name)`).eq('is_active', true);
+        if (type) query = query.eq('product_type', type);
+        const { data } = await query.order('product_type').order('name');
         const products = (data || []).map(p => ({ ...p, category_name: p.categories?.name }));
         return json(res, products);
       }
       if (method === 'POST') {
-        const { name, description, category_id, price } = req.body;
-        const { data } = await supabase.from('products').insert({ name, description, category_id, price }).select().single();
+        const { name, description, category_id, cost_price, price, product_type } = req.body;
+        const { data } = await supabase.from('products').insert({ name, description, category_id: category_id || null, cost_price: cost_price || 0, price: price || 0, product_type: product_type || 'product' }).select().single();
         return json(res, data);
       }
       if (method === 'PUT' && segments[1]) {
-        const { name, description, category_id, price, is_active } = req.body;
-        const { data } = await supabase.from('products').update({ name, description, category_id, price, is_active }).eq('id', segments[1]).select().single();
+        const { name, description, category_id, cost_price, price, product_type, is_active } = req.body;
+        const { data } = await supabase.from('products').update({ name, description, category_id: category_id || null, cost_price: cost_price || 0, price: price || 0, product_type: product_type || 'product', is_active }).eq('id', segments[1]).select().single();
         return json(res, data);
       }
       if (method === 'DELETE' && segments[1]) {
@@ -827,6 +911,163 @@ Example: For Rs. 10,000 budget → Max Cost = 10,000 × 0.62 = Rs. 6,200. Select
           return error(res, 'No AI API key configured. Add DEEPSEEK_API_KEY, GROQ_API_KEY, or GEMINI_API_KEY to environment variables.', 500);
         }
         return json(res, { response: aiResponse });
+      }
+    }
+
+    // VENDOR ORDERS
+    if (segments[0] === 'vendor-orders') {
+      if (method === 'GET' && !segments[1]) {
+        const vendor_id = url.searchParams.get('vendor_id');
+        const invoice_id = url.searchParams.get('invoice_id');
+        const status = url.searchParams.get('status');
+        let query = supabase.from('vendor_orders').select(`*, vendors (id, name, phone), invoices (id, invoice_number, customer_id, customers (name)), users (name)`).order('created_at', { ascending: false });
+        if (vendor_id) query = query.eq('vendor_id', vendor_id);
+        if (invoice_id) query = query.eq('invoice_id', invoice_id);
+        if (status) query = query.eq('status', status);
+        const { data } = await query;
+        const orders = (data || []).map(o => ({ ...o, vendor_name: o.vendors?.name, vendor_phone: o.vendors?.phone, invoice_number: o.invoices?.invoice_number, customer_name: o.invoices?.customers?.name, created_by_name: o.users?.name, balance_due: parseFloat(o.total_amount) - parseFloat(o.amount_paid || 0) }));
+        return json(res, orders);
+      }
+      if (method === 'GET' && segments[1] === 'invoice' && segments[2]) {
+        const { data } = await supabase.from('vendor_orders').select(`*, vendors (id, name, phone)`).eq('invoice_id', segments[2]).order('created_at', { ascending: false });
+        const orders = (data || []).map(o => ({ ...o, vendor_name: o.vendors?.name, vendor_phone: o.vendors?.phone, balance_due: parseFloat(o.total_amount) - parseFloat(o.amount_paid || 0) }));
+        return json(res, orders);
+      }
+      if (method === 'GET' && segments[1] === 'vendor' && segments[2] && segments[3] === 'summary') {
+        const { data: orders } = await supabase.from('vendor_orders').select('total_amount, amount_paid, status').eq('vendor_id', segments[2]);
+        const summary = { total_orders: orders?.length || 0, pending_orders: orders?.filter(o => o.status !== 'completed' && o.status !== 'cancelled').length || 0, completed_orders: orders?.filter(o => o.status === 'completed').length || 0, total_amount: orders?.reduce((sum, o) => sum + parseFloat(o.total_amount || 0), 0) || 0, total_paid: orders?.reduce((sum, o) => sum + parseFloat(o.amount_paid || 0), 0) || 0, total_balance: orders?.reduce((sum, o) => sum + (parseFloat(o.total_amount || 0) - parseFloat(o.amount_paid || 0)), 0) || 0 };
+        return json(res, summary);
+      }
+      if (method === 'GET' && segments[1] && segments[2] === 'payments') {
+        const { data } = await supabase.from('vendor_payments').select('*, users (name)').eq('vendor_order_id', segments[1]).order('payment_date', { ascending: false });
+        const payments = (data || []).map(p => ({ ...p, created_by_name: p.users?.name }));
+        return json(res, payments);
+      }
+      if (method === 'GET' && segments[1]) {
+        const { data: order } = await supabase.from('vendor_orders').select(`*, vendors (id, name, phone, address), invoices (id, invoice_number, customer_id, customers (name, whatsapp))`).eq('id', segments[1]).single();
+        if (!order) return error(res, 'Vendor order not found', 404);
+        const { data: payments } = await supabase.from('vendor_payments').select('*, users (name)').eq('vendor_order_id', segments[1]).order('payment_date', { ascending: false });
+        return json(res, { ...order, vendor_name: order.vendors?.name, vendor_phone: order.vendors?.phone, invoice_number: order.invoices?.invoice_number, customer_name: order.invoices?.customers?.name, payments: payments || [], balance_due: parseFloat(order.total_amount) - parseFloat(order.amount_paid || 0) });
+      }
+      if (method === 'POST' && segments[1] && segments[2] === 'payments') {
+        const { amount, payment_type, payment_method, notes } = req.body;
+        const { data: order } = await supabase.from('vendor_orders').select('vendor_id, total_amount, amount_paid').eq('id', segments[1]).single();
+        if (!order) return error(res, 'Vendor order not found', 404);
+        const { data } = await supabase.from('vendor_payments').insert({ vendor_order_id: parseInt(segments[1]), vendor_id: order.vendor_id, amount, payment_type: payment_type || 'advance', payment_method: payment_method || 'cash', notes, created_by: user.id }).select().single();
+        return json(res, data);
+      }
+      if (method === 'POST' && !segments[1]) {
+        const { invoice_id, vendor_id, description, total_amount, notes } = req.body;
+        if (!invoice_id || !vendor_id || !description) return error(res, 'Invoice, vendor, and description are required', 400);
+        const { data } = await supabase.from('vendor_orders').insert({ invoice_id, vendor_id, description, total_amount: total_amount || 0, notes, created_by: user.id }).select().single();
+        return json(res, data);
+      }
+      if (method === 'PUT' && segments[1]) {
+        const { description, total_amount, notes, status } = req.body;
+        const updateData = { description, total_amount, notes, status, updated_at: new Date().toISOString() };
+        if (status === 'completed') updateData.completed_at = new Date().toISOString();
+        const { data } = await supabase.from('vendor_orders').update(updateData).eq('id', segments[1]).select().single();
+        return json(res, data);
+      }
+      if (method === 'PATCH' && segments[1] && segments[2] === 'status') {
+        const { status } = req.body;
+        const updateData = { status, updated_at: new Date().toISOString() };
+        if (status === 'completed') updateData.completed_at = new Date().toISOString();
+        const { data } = await supabase.from('vendor_orders').update(updateData).eq('id', segments[1]).select().single();
+        return json(res, data);
+      }
+      if (method === 'DELETE' && segments[1] === 'payments' && segments[2]) {
+        await supabase.from('vendor_payments').delete().eq('id', segments[2]);
+        return json(res, { message: 'Payment deleted' });
+      }
+      if (method === 'DELETE' && segments[1]) {
+        await supabase.from('vendor_orders').delete().eq('id', segments[1]);
+        return json(res, { message: 'Vendor order deleted' });
+      }
+    }
+
+    // PUSH NOTIFICATIONS
+    if (segments[0] === 'push') {
+      const vapidPublicKey = process.env.VAPID_PUBLIC_KEY;
+      if (segments[1] === 'vapid-public-key' && method === 'GET') {
+        if (!vapidPublicKey) return error(res, 'Push notifications not configured', 500);
+        return json(res, { publicKey: vapidPublicKey });
+      }
+      if (segments[1] === 'subscribe' && method === 'POST') {
+        const { endpoint, keys } = req.body;
+        if (!endpoint || !keys?.p256dh || !keys?.auth) return error(res, 'Invalid subscription data', 400);
+        const { data } = await supabase.from('push_subscriptions').upsert({ user_id: user.id, endpoint, p256dh: keys.p256dh, auth: keys.auth, last_used_at: new Date().toISOString() }, { onConflict: 'endpoint' }).select().single();
+        return json(res, { success: true, subscription: data });
+      }
+      if (segments[1] === 'unsubscribe' && method === 'POST') {
+        const { endpoint } = req.body;
+        await supabase.from('push_subscriptions').delete().eq('user_id', user.id).eq('endpoint', endpoint);
+        return json(res, { success: true });
+      }
+      if (segments[1] === 'status' && method === 'GET') {
+        const { data: subscriptions } = await supabase.from('push_subscriptions').select('id, created_at, last_used_at').eq('user_id', user.id);
+        return json(res, { enabled: subscriptions && subscriptions.length > 0, subscriptions: subscriptions || [] });
+      }
+      if (segments[1] === 'test' && method === 'POST') {
+        // Note: Actual push sending requires web-push library which isn't available in serverless
+        // This just confirms the endpoint works
+        return json(res, { success: true, message: 'Push test endpoint reached. Actual push requires server-side web-push library.' });
+      }
+    }
+
+    // REMINDERS
+    if (segments[0] === 'reminders') {
+      if (segments[1] === 'check' && method === 'GET') {
+        const cronSecret = req.headers['x-cron-secret'];
+        if (process.env.CRON_SECRET && cronSecret !== process.env.CRON_SECRET) return error(res, 'Unauthorized', 401);
+        const today = new Date();
+        const results = { checked: 0, reminders_sent: 0, dates: [] };
+        const { data: dates } = await supabase.from('important_dates').select(`*, customers (id, name, whatsapp), recipients (name)`).eq('recurring', true);
+        if (!dates || dates.length === 0) return json(res, { ...results, message: 'No dates to check' });
+        const { data: users } = await supabase.from('users').select('id');
+        for (const date of dates) {
+          results.checked++;
+          const dateMonthDay = date.date.substring(5);
+          const [month, day] = dateMonthDay.split('-').map(Number);
+          let targetDate = new Date(today.getFullYear(), month - 1, day);
+          if (targetDate < today) targetDate = new Date(today.getFullYear() + 1, month - 1, day);
+          const diffTime = targetDate - today;
+          const daysUntil = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          const reminderDays = date.reminder_days || 7;
+          const shouldRemind = daysUntil === reminderDays || daysUntil === 0;
+          if (date.reminder_sent_at) {
+            const lastReminder = new Date(date.reminder_sent_at);
+            const hoursSinceReminder = (today - lastReminder) / (1000 * 60 * 60);
+            if (hoursSinceReminder < 24) continue;
+          }
+          if (shouldRemind) {
+            const customerName = date.customers?.name || 'Unknown';
+            const recipientName = date.recipients?.name;
+            for (const u of users || []) {
+              await supabase.from('notifications').insert({ user_id: u.id, type: 'reminder', title: daysUntil === 0 ? `🎉 TODAY: ${date.title}` : `📅 Upcoming: ${date.title}`, message: `${customerName}${recipientName ? ` → ${recipientName}` : ''} - ${daysUntil === 0 ? 'Today!' : `in ${daysUntil} days`}`, related_entity_type: 'important_date', related_entity_id: date.id });
+            }
+            await supabase.from('important_dates').update({ reminder_sent_at: new Date().toISOString() }).eq('id', date.id);
+            results.reminders_sent++;
+            results.dates.push({ id: date.id, title: date.title, customer: customerName, daysUntil });
+          }
+        }
+        return json(res, { success: true, ...results, timestamp: new Date().toISOString() });
+      }
+      if (segments[1] === 'notifications' && segments[2] === 'unread-count' && method === 'GET') {
+        const { count } = await supabase.from('notifications').select('id', { count: 'exact', head: true }).eq('user_id', user.id).is('read_at', null);
+        return json(res, { count: count || 0 });
+      }
+      if (segments[1] === 'notifications' && segments[2] === 'read-all' && method === 'PATCH') {
+        await supabase.from('notifications').update({ read_at: new Date().toISOString() }).eq('user_id', user.id).is('read_at', null);
+        return json(res, { success: true });
+      }
+      if (segments[1] === 'notifications' && segments[2] && segments[3] === 'read' && method === 'PATCH') {
+        await supabase.from('notifications').update({ read_at: new Date().toISOString() }).eq('id', segments[2]).eq('user_id', user.id);
+        return json(res, { success: true });
+      }
+      if (segments[1] === 'notifications' && method === 'GET') {
+        const { data } = await supabase.from('notifications').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(50);
+        return json(res, data || []);
       }
     }
 

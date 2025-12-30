@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api';
-import { Users, FileText, Clock, TrendingUp, Calendar, MessageCircle, DollarSign, Package, Truck, AlertCircle, Gift } from 'lucide-react';
+import { Users, FileText, Clock, TrendingUp, Calendar, MessageCircle, DollarSign, Package, Truck, AlertCircle, Gift, Zap, Plus } from 'lucide-react';
 import StatsCard from '../components/StatsCard';
+import QuickOrderModal from '../components/QuickOrderModal';
 
 export default function Dashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showQuickOrder, setShowQuickOrder] = useState(false);
+  const [quickOrderContext, setQuickOrderContext] = useState({});
 
   useEffect(() => {
     api.get('/dashboard').then(res => {
@@ -23,6 +26,14 @@ export default function Dashboard() {
 
   const followUpMessage = (name, invoiceNumber, total) => {
     return `Hi ${name}! This is Mathaka Gift Store. Just a friendly reminder about your pending invoice ${invoiceNumber} for Rs. ${total?.toLocaleString()}. Please let us know if you have any questions! 🎁`;
+  };
+
+  const openQuickOrderForDate = (date) => {
+    setQuickOrderContext({
+      preselectedCustomer: date.customer_id,
+      preselectedOccasion: date.title
+    });
+    setShowQuickOrder(true);
   };
 
   if (loading) return (
@@ -112,12 +123,22 @@ export default function Dashboard() {
                           <p className="text-xs text-gray-600">{date.customer_name}</p>
                           <p className="text-xs text-pink-600">{date.monthDay}</p>
                         </div>
-                        <button
-                          onClick={() => openWhatsApp(date.customer_whatsapp, date.customer_name)}
-                          className="p-1.5 text-green-600 hover:bg-green-100 rounded"
-                        >
-                          <MessageCircle size={16} />
-                        </button>
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => openQuickOrderForDate(date)}
+                            className="p-1.5 text-orange-600 hover:bg-orange-100 rounded"
+                            title="Quick Order"
+                          >
+                            <Zap size={16} />
+                          </button>
+                          <button
+                            onClick={() => openWhatsApp(date.customer_whatsapp, date.customer_name)}
+                            className="p-1.5 text-green-600 hover:bg-green-100 rounded"
+                            title="WhatsApp"
+                          >
+                            <MessageCircle size={16} />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -166,15 +187,21 @@ export default function Dashboard() {
           icon={Calendar}
         />
         <div className="glass-panel p-6 flex flex-col justify-center items-center text-center">
-          <p className="text-gray-500 text-sm mb-2">Quick Actions</p>
-          <div className="flex gap-3">
-            <Link to="/invoices/new" className="glass-button glass-button-primary text-sm">
-              + New Order
-            </Link>
-            <Link to="/customers" className="glass-button bg-gray-100 text-gray-700 text-sm hover:bg-gray-200">
-              View Customers
+          <p className="text-gray-500 text-sm mb-3">Quick Actions</p>
+          <div className="flex flex-col sm:flex-row gap-2 w-full">
+            <button
+              onClick={() => setShowQuickOrder(true)}
+              className="flex-1 glass-button bg-gradient-to-r from-orange-500 to-yellow-500 text-white text-sm flex items-center justify-center gap-2"
+            >
+              <Zap size={16} /> Quick Order
+            </button>
+            <Link to="/invoices/new" className="flex-1 glass-button glass-button-primary text-sm flex items-center justify-center gap-2">
+              <Plus size={16} /> Full Order
             </Link>
           </div>
+          <Link to="/customers" className="mt-2 text-sm text-purple-600 hover:underline">
+            View Customers →
+          </Link>
         </div>
       </div>
 
@@ -235,13 +262,22 @@ export default function Dashboard() {
                   </p>
                   <p className="text-xs text-crm-purple font-medium mt-1">{date.date}</p>
                 </div>
-                <button
-                  onClick={(e) => { e.stopPropagation(); openWhatsApp(date.customer_whatsapp, date.customer_name); }}
-                  className="p-2 text-green-600 hover:bg-green-50 active:bg-green-100 rounded-lg touch-target flex-shrink-0"
-                  title="Send WhatsApp"
-                >
-                  <MessageCircle size={20} />
-                </button>
+                <div className="flex gap-1 flex-shrink-0">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); openQuickOrderForDate(date); }}
+                    className="p-2 text-orange-600 hover:bg-orange-50 active:bg-orange-100 rounded-lg touch-target"
+                    title="Quick Order"
+                  >
+                    <Zap size={18} />
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); openWhatsApp(date.customer_whatsapp, date.customer_name); }}
+                    className="p-2 text-green-600 hover:bg-green-50 active:bg-green-100 rounded-lg touch-target"
+                    title="Send WhatsApp"
+                  >
+                    <MessageCircle size={18} />
+                  </button>
+                </div>
               </div>
             ))}
             {(!data.upcomingDates || data.upcomingDates.length === 0) && (
@@ -251,6 +287,18 @@ export default function Dashboard() {
         </div>
 
       </div>
+
+      {/* Quick Order Modal */}
+      {showQuickOrder && (
+        <QuickOrderModal
+          onClose={() => {
+            setShowQuickOrder(false);
+            setQuickOrderContext({});
+          }}
+          preselectedCustomer={quickOrderContext.preselectedCustomer}
+          preselectedOccasion={quickOrderContext.preselectedOccasion}
+        />
+      )}
     </div>
   );
 }

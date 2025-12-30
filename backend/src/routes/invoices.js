@@ -343,6 +343,138 @@ router.patch('/:id/status', authenticate, async (req, res) => {
   }
 });
 
+// Update invoice (full edit)
+router.put('/:id', authenticate, async (req, res) => {
+  try {
+    const { customer_id, recipient_id, items, packages, discount, notes, delivery_zone_id, delivery_fee, gift_message } = req.body;
+
+    // Check if invoice exists and is editable (not paid/cancelled)
+    const { data: existingInvoice } = await supabase
+      .from('invoices')
+      .select('status')
+      .eq('id', req.params.id)
+      .single();
+
+    if (!existingInvoice) {
+      return res.status(404).json({ error: 'Invoice not found' });
+    }
+
+    if (existingInvoice.status === 'paid') {
+      return res.status(400).json({ error: 'Cannot edit a paid invoice' });
+    }
+
+    if (existingInvoice.status === 'cancelled') {
+      return res.status(400).json({ error: 'Cannot edit a cancelled invoice' });
+    }
+
+    let subtotal = 0;
+    let totalCost = 0;
+    let totalPackagingCost = 0;
+
+    // Calculate totals from packages if provided
+    if (packages && packages.length > 0) {
+      packages.forEach(pkg => {
+        subtotal += parseFloat(pkg.package_price) || 0;
+        totalPackagingCost += parseFloat(pkg.packaging_cost) || 0;
+        (pkg.items || []).forEach(item => {
+          totalCost += (parseFloat(item.cost_price) || 0) * (item.quantity || 1);
+        });
+      });
+      totalCost += totalPackagingCost;
+    } else if (items && items.length > 0) {
+      subtotal = items.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
+      totalCost = items.reduce((sum, item) => sum + ((item.cost_price || 0) * item.quantity), 0);
+    }
+
+    const total = subtotal - (discount || 0) + (delivery_fee || 0);
+    const profit = total - totalCost - (delivery_fee || 0);
+    const profitMargin = total > 0 ? (profit / total) * 100 : 0;
+    const markupPercentage = totalCost > 0 ? (profit / totalCost) * 100 : 0;
+
+    // Update invoice
+    const { error: invoiceError } = await supabase
+      .from('invoices')
+      .update({
+        customer_id,
+        recipient_id: recipient_id || null,
+        subtotal,
+        discount: discount || 0,
+        total,
+        total_cost: totalCost,
+        total_packaging_cost: totalPackagingCost,
+        profit_margin: profitMargin,
+        markup_percentage: markupPercentage,
+        notes,
+        delivery_zone_id: delivery_zone_id || null,
+        delivery_fee: delivery_fee || 0,
+        gift_message: gift_message || null
+      })
+      .eq('id', req.params.id);
+
+    if (invoiceError) throw invoiceError;
+
+    // Delete existing packages and items
+    await supabase.from('invoice_items').delete().eq('invoice_id', req.params.id);
+    await supabase.from('invoice_packages').delete().eq('invoice_id', req.params.id);
+
+    // Insert new packages and items
+    if (packages && packages.length > 0) {
+      for (const pkg of packages) {
+        const { data: packageData, error: pkgError } = await supabase
+          .from('invoice_packages')
+          .insert({
+            invoice_id: req.params.id,
+            package_name: pkg.package_name,
+            package_price: pkg.package_price,
+            packaging_cost: pkg.packaging_cost || 0,
+            notes: pkg.notes || null
+          })
+          .select()
+          .single();
+
+        if (pkgError) throw pkgError;
+
+        if (pkg.items && pkg.items.length > 0) {
+          const packageItems = pkg.items.map(item => ({
+            invoice_id: req.params.id,
+            package_id: packageData.id,
+            product_id: item.product_id || null,
+            category_id: item.category_id || null,
+            vendor_id: item.vendor_id || null,
+            description: item.description,
+            quantity: item.quantity || 1,
+            unit_price: item.unit_price || 0,
+            cost_price: item.cost_price || 0,
+            total: (item.quantity || 1) * (item.unit_price || 0)
+          }));
+
+          await supabase.from('invoice_items').insert(packageItems);
+        }
+      }
+    } else if (items && items.length > 0) {
+      const invoiceItems = items.map(item => ({
+        invoice_id: req.params.id,
+        package_id: null,
+        product_id: item.product_id || null,
+        category_id: item.category_id || null,
+        vendor_id: item.vendor_id || null,
+        description: item.description,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        cost_price: item.cost_price || 0,
+        total: item.quantity * item.unit_price
+      }));
+
+      await supabase.from('invoice_items').insert(invoiceItems);
+    }
+
+    res.json({ message: 'Invoice updated successfully' });
+  } catch (err) {
+    console.error('Invoice update error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // Delete invoice
 router.delete('/:id', authenticate, async (req, res) => {
   try {

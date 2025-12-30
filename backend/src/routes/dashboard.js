@@ -129,6 +129,7 @@ router.get('/', authenticate, async (req, res) => {
     const upcomingDates = (allDates || [])
       .map(d => ({
         ...d,
+        customer_id: d.customer_id,
         customer_name: d.customers?.name,
         customer_whatsapp: d.customers?.whatsapp,
         recipient_name: d.recipients?.name,

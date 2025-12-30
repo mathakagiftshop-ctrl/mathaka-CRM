@@ -9,8 +9,10 @@ import CustomerDetail from './pages/CustomerDetail';
 import Invoices from './pages/Invoices';
 import InvoiceDetail from './pages/InvoiceDetail';
 import CreateInvoice from './pages/CreateInvoice';
+import EditInvoice from './pages/EditInvoice';
 import Receipts from './pages/Receipts';
 import Vendors from './pages/Vendors';
+import VendorOrders from './pages/VendorOrders';
 import Settings from './pages/Settings';
 import Users from './pages/Users';
 import ImportantDates from './pages/ImportantDates';
@@ -84,9 +86,11 @@ export default function App() {
             <Route path="invoices" element={<Invoices />} />
             <Route path="invoices/new" element={<CreateInvoice />} />
             <Route path="invoices/:id" element={<InvoiceDetail />} />
+            <Route path="invoices/:id/edit" element={<EditInvoice />} />
             <Route path="receipts" element={<Receipts />} />
             <Route path="products" element={<Products />} />
             <Route path="vendors" element={<Vendors />} />
+            <Route path="vendor-orders" element={<VendorOrders />} />
             <Route path="expenses" element={<Expenses />} />
             <Route path="important-dates" element={<ImportantDates />} />
             <Route path="reports" element={<Reports />} />

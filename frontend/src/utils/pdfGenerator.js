@@ -199,6 +199,27 @@ export async function generateInvoicePDF(invoice, settings) {
   doc.setFont('helvetica', 'bold');
   doc.text('Total: ' + currency + ' ' + parseFloat(invoice.total).toFixed(2), 140, totalsY);
   
+  // Payment information
+  const amountPaid = parseFloat(invoice.amount_paid) || 0;
+  const balanceDue = parseFloat(invoice.total) - amountPaid;
+  
+  if (amountPaid > 0) {
+    totalsY += 8;
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(0, 128, 0);
+    doc.text('Amount Paid: ' + currency + ' ' + amountPaid.toLocaleString(), 140, totalsY);
+    doc.setTextColor(0, 0, 0);
+    
+    if (balanceDue > 0) {
+      totalsY += 6;
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(200, 0, 0);
+      doc.text('Balance Due: ' + currency + ' ' + balanceDue.toLocaleString(), 140, totalsY);
+      doc.setTextColor(0, 0, 0);
+    }
+  }
+  
   // Bank details
   try {
     const banks = JSON.parse(settings.bank_accounts || '[]');
@@ -385,6 +406,38 @@ export async function generateCustomerInvoicePDF(invoice, settings) {
   doc.setFont('helvetica', 'bold');
   doc.text('Total:', 130, currentY + 2);
   doc.text(currency + ' ' + parseFloat(invoice.total).toFixed(2), 190, currentY + 2, { align: 'right' });
+  currentY += 10;
+  
+  // Payment information
+  const amountPaid = parseFloat(invoice.amount_paid) || 0;
+  const balanceDue = parseFloat(invoice.total) - amountPaid;
+  
+  if (amountPaid > 0) {
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(0, 128, 0);
+    doc.text('Amount Paid:', 130, currentY);
+    doc.text(currency + ' ' + amountPaid.toLocaleString(), 190, currentY, { align: 'right' });
+    currentY += 6;
+    doc.setTextColor(0, 0, 0);
+    
+    if (balanceDue > 0) {
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(200, 0, 0);
+      doc.text('Balance Due:', 130, currentY);
+      doc.text(currency + ' ' + balanceDue.toLocaleString(), 190, currentY, { align: 'right' });
+      doc.setTextColor(0, 0, 0);
+      currentY += 8;
+    } else {
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(0, 128, 0);
+      doc.text('FULLY PAID', 160, currentY, { align: 'center' });
+      doc.setTextColor(0, 0, 0);
+      currentY += 8;
+    }
+  }
   
   // Bank details
   try {

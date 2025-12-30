@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../api';
-import { Plus, Search, MessageCircle, User, AlertTriangle } from 'lucide-react';
+import { Plus, Search, MessageCircle, User, AlertTriangle, Sparkles } from 'lucide-react';
+import CustomerOnboardingWizard from '../components/CustomerOnboardingWizard';
 
 export default function Customers() {
   const navigate = useNavigate();
   const [customers, setCustomers] = useState([]);
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [showWizard, setShowWizard] = useState(false);
   const [form, setForm] = useState({ name: '', whatsapp: '', country: '', notes: '' });
   const [loading, setLoading] = useState(true);
   const [duplicateWarning, setDuplicateWarning] = useState(null);
@@ -83,12 +85,20 @@ export default function Customers() {
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
         <h1 className="text-2xl font-bold">Customers</h1>
-        <button
-          onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
-        >
-          <Plus size={20} /> Add Customer
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowModal(true)}
+            className="flex items-center gap-2 border border-purple-200 text-purple-600 px-4 py-2 rounded-lg hover:bg-purple-50"
+          >
+            <Plus size={20} /> Quick Add
+          </button>
+          <button
+            onClick={() => setShowWizard(true)}
+            className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
+          >
+            <Sparkles size={20} /> New Customer Setup
+          </button>
+        </div>
       </div>
 
       {/* Search */}
@@ -141,7 +151,7 @@ export default function Customers() {
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl w-full max-w-md p-6">
-            <h2 className="text-xl font-bold mb-4">Add Customer</h2>
+            <h2 className="text-xl font-bold mb-4">Quick Add Customer</h2>
 
             {/* Duplicate Warning */}
             {duplicateWarning && (
@@ -235,6 +245,18 @@ export default function Customers() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Customer Onboarding Wizard */}
+      {showWizard && (
+        <CustomerOnboardingWizard
+          onClose={() => setShowWizard(false)}
+          onComplete={(customerId) => {
+            setShowWizard(false);
+            fetchCustomers();
+            navigate(`/customers/${customerId}`);
+          }}
+        />
       )}
     </div>
   );
