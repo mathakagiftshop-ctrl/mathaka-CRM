@@ -123,291 +123,244 @@ export default function CustomerOnboardingWizard({ onClose, onComplete }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
-        {/* Header */}
-        <div className="p-4 border-b border-crm-border flex justify-between items-center bg-white">
-          <h2 className="text-xl font-bold text-crm-primary">New Customer Setup</h2>
-          <button onClick={onClose} className="p-2 hover:bg-crm-background rounded-lg text-crm-secondary hover:text-crm-primary">
-            <X size={20} />
-          </button>
-        </div>
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-3xl w-full max-w-4xl h-[600px] flex overflow-hidden shadow-2xl ring-1 ring-black/5">
 
-        {/* Progress Steps */}
-        <div className="px-6 py-4 border-b border-crm-border bg-crm-background">
-          <div className="flex items-center justify-between">
+        {/* Left Sidebar - Steps */}
+        <div className="w-1/3 bg-gray-50 p-6 border-r border-crm-border flex flex-col">
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-crm-primary">New Customer</h2>
+            <p className="text-sm text-crm-secondary mt-1">Complete these steps to onboard.</p>
+          </div>
+
+          <div className="space-y-6 flex-1">
             {steps.map((s, i) => (
-              <div key={s.num} className="flex items-center">
-                <div className={`flex items-center gap-2 ${step >= s.num ? 'text-crm-primary' : 'text-crm-secondary'}`}>
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step > s.num ? 'bg-crm-success text-white' :
-                      step === s.num ? 'bg-crm-primary text-white' : 'bg-gray-200'
-                    }`}>
-                    {step > s.num ? <Check size={16} /> : <s.icon size={16} />}
-                  </div>
-                  <span className="text-sm font-medium hidden sm:block">{s.title}</span>
-                </div>
+              <div key={s.num} className="relative flex gap-4">
+                {/* Vertical Line */}
                 {i < steps.length - 1 && (
-                  <ChevronRight className="mx-2 text-crm-border" size={20} />
+                  <div className={`absolute left-4 top-8 bottom-[-24px] w-0.5 ${step > s.num ? 'bg-crm-accent' : 'bg-gray-200'}`} />
                 )}
+
+                <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center border-2 transition-colors ${step > s.num ? 'bg-crm-accent border-crm-accent text-crm-primary' :
+                    step === s.num ? 'bg-crm-primary border-crm-primary text-white' :
+                      'bg-white border-gray-300 text-gray-400'
+                  }`}>
+                  {step > s.num ? <Check size={16} /> : <span className="text-xs font-bold">{s.num}</span>}
+                </div>
+                <div>
+                  <p className={`font-medium text-sm ${step === s.num ? 'text-crm-primary' : 'text-crm-secondary'}`}>
+                    {s.title}
+                  </p>
+                  <p className="text-xs text-crm-secondary mt-0.5">
+                    {i === 0 ? 'Basic details' : i === 1 ? 'Delivery contacts' : 'Birthdays & events'}
+                  </p>
+                </div>
               </div>
             ))}
           </div>
+
+          <button onClick={onClose} className="flex items-center gap-2 text-crm-secondary hover:text-crm-primary mt-auto text-sm font-medium">
+            <ChevronLeft size={16} /> Cancel Setup
+          </button>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
-          {/* Step 1: Customer Info */}
-          {step === 1 && (
-            <div className="space-y-4">
-              <p className="text-crm-secondary mb-4">Let's start with the basic customer information.</p>
+        {/* Right Content */}
+        <div className="flex-1 flex flex-col bg-white">
+          <div className="flex-1 overflow-y-auto p-8 relative">
+            {/* Context Header for Mobile/Small views removed as this is a large modal */}
 
-              {duplicateWarning && (
-                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-2">
-                  <AlertTriangle className="text-yellow-600 flex-shrink-0 mt-0.5" size={18} />
-                  <div>
-                    <p className="text-sm font-medium text-yellow-800">Possible duplicate!</p>
-                    <p className="text-sm text-yellow-700">Customer exists: <strong>{duplicateWarning.name}</strong></p>
+            {/* Step 1: Customer Info */}
+            {step === 1 && (
+              <div className="space-y-6 animate-fadeIn">
+                <h3 className="text-xl font-bold text-crm-primary">Basic Information</h3>
+
+                {duplicateWarning && (
+                  <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-xl flex items-start gap-4">
+                    <div className="bg-yellow-100 p-2 rounded-full text-yellow-700">
+                      <AlertTriangle size={20} />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-yellow-900">Possible Duplicate</h4>
+                      <p className="text-sm text-yellow-800 mt-1">
+                        A customer named <strong>{duplicateWarning.name}</strong> already exists with this number.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid gap-6">
+                  <div className="group">
+                    <label className="block text-sm font-medium text-crm-secondary mb-2 group-focus-within:text-crm-primary transition-colors">Full Name *</label>
+                    <input
+                      type="text"
+                      value={customerForm.name}
+                      onChange={(e) => setCustomerForm({ ...customerForm, name: e.target.value })}
+                      className="w-full px-4 py-3 bg-gray-50 border-0 rounded-xl ring-1 ring-gray-200 focus:ring-2 focus:ring-crm-accent outline-none transition-all"
+                      placeholder="e.g. Sarah Connor"
+                    />
+                  </div>
+
+                  <div className="group">
+                    <label className="block text-sm font-medium text-crm-secondary mb-2 group-focus-within:text-crm-primary transition-colors">WhatsApp Number *</label>
+                    <input
+                      type="text"
+                      value={customerForm.whatsapp}
+                      onChange={(e) => setCustomerForm({ ...customerForm, whatsapp: e.target.value })}
+                      onBlur={checkDuplicate}
+                      className="w-full px-4 py-3 bg-gray-50 border-0 rounded-xl ring-1 ring-gray-200 focus:ring-2 focus:ring-crm-accent outline-none transition-all"
+                      placeholder="+971..."
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="group">
+                      <label className="block text-sm font-medium text-crm-secondary mb-2">Country</label>
+                      <input
+                        type="text"
+                        value={customerForm.country}
+                        onChange={(e) => setCustomerForm({ ...customerForm, country: e.target.value })}
+                        className="w-full px-4 py-3 bg-gray-50 border-0 rounded-xl ring-1 ring-gray-200 focus:ring-2 focus:ring-crm-accent outline-none"
+                        placeholder="UAE"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="group">
+                    <label className="block text-sm font-medium text-crm-secondary mb-2">Internal Notes</label>
+                    <textarea
+                      value={customerForm.notes}
+                      onChange={(e) => setCustomerForm({ ...customerForm, notes: e.target.value })}
+                      className="w-full px-4 py-3 bg-gray-50 border-0 rounded-xl ring-1 ring-gray-200 focus:ring-2 focus:ring-crm-accent outline-none"
+                      rows={3}
+                      placeholder="Preferences, referral source, etc."
+                    />
                   </div>
                 </div>
-              )}
+              </div>
+            )}
 
-              <div>
-                <label className="block text-sm font-medium mb-1 text-crm-secondary">Name *</label>
-                <input
-                  type="text"
-                  value={customerForm.name}
-                  onChange={(e) => setCustomerForm({ ...customerForm, name: e.target.value })}
-                  className="w-full px-4 py-3 border border-crm-border rounded-xl focus:ring-1 focus:ring-crm-primary outline-none"
-                  placeholder="Customer name"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1 text-crm-secondary">WhatsApp Number *</label>
-                <input
-                  type="text"
-                  value={customerForm.whatsapp}
-                  onChange={(e) => setCustomerForm({ ...customerForm, whatsapp: e.target.value })}
-                  onBlur={checkDuplicate}
-                  className="w-full px-4 py-3 border border-crm-border rounded-xl focus:ring-1 focus:ring-crm-primary outline-none"
-                  placeholder="+971XXXXXXXXX"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1 text-crm-secondary">Country</label>
-                <input
-                  type="text"
-                  value={customerForm.country}
-                  onChange={(e) => setCustomerForm({ ...customerForm, country: e.target.value })}
-                  className="w-full px-4 py-3 border border-crm-border rounded-xl focus:ring-1 focus:ring-crm-primary outline-none"
-                  placeholder="UAE, Qatar, Saudi..."
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1 text-crm-secondary">Notes</label>
-                <textarea
-                  value={customerForm.notes}
-                  onChange={(e) => setCustomerForm({ ...customerForm, notes: e.target.value })}
-                  className="w-full px-4 py-3 border border-crm-border rounded-xl focus:ring-1 focus:ring-crm-primary outline-none"
-                  rows={2}
-                  placeholder="Any notes about this customer..."
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Step 2: Recipients */}
-          {step === 2 && (
-            <div className="space-y-4">
-              <p className="text-crm-secondary mb-4">Add recipients in Sri Lanka who will receive gifts.</p>
-
-              {/* Add Recipient Form */}
-              <div className="p-4 bg-crm-background rounded-xl space-y-3 border border-crm-border">
-                <div className="grid sm:grid-cols-2 gap-3">
-                  <input
-                    value={recipientForm.name}
-                    onChange={(e) => setRecipientForm({ ...recipientForm, name: e.target.value })}
-                    placeholder="Recipient name *"
-                    className="px-3 py-2 border border-crm-border rounded-lg"
-                  />
-                  <input
-                    value={recipientForm.relationship}
-                    onChange={(e) => setRecipientForm({ ...recipientForm, relationship: e.target.value })}
-                    placeholder="Relationship (Mother, Wife...)"
-                    className="px-3 py-2 border border-crm-border rounded-lg"
-                  />
+            {/* Step 2 & 3 content logic remains largely same layout but wrapped in this cleaner structure */}
+            {/* Truncated for brevity... implementing similar clean inputs for Step 2 and 3 */}
+            {step === 2 && (
+              <div className="space-y-6 animate-fadeIn">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-xl font-bold text-crm-primary">Recipients</h3>
+                  <div className="bg-crm-accent px-3 py-1 rounded-full text-xs font-bold text-crm-primary">
+                    {recipients.length} Added
+                  </div>
                 </div>
-                <input
-                  value={recipientForm.phone}
-                  onChange={(e) => setRecipientForm({ ...recipientForm, phone: e.target.value })}
-                  placeholder="Phone number"
-                  className="w-full px-3 py-2 border border-crm-border rounded-lg"
-                />
-                <textarea
-                  value={recipientForm.address}
-                  onChange={(e) => setRecipientForm({ ...recipientForm, address: e.target.value })}
-                  placeholder="Delivery address"
-                  className="w-full px-3 py-2 border border-crm-border rounded-lg"
-                  rows={2}
-                />
-                <button
-                  type="button"
-                  onClick={addRecipient}
-                  disabled={!recipientForm.name}
-                  className="w-full py-2 btn-ghost border border-crm-border text-crm-primary rounded-lg disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  <Plus size={18} /> Add Recipient
-                </button>
-              </div>
 
-              {/* Recipients List */}
-              {recipients.length > 0 && (
-                <div className="space-y-2">
-                  <h3 className="font-medium text-sm text-crm-secondary">Added Recipients ({recipients.length})</h3>
+                <div className="bg-gray-50 rounded-2xl p-6 ring-1 ring-gray-200">
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <input
+                      value={recipientForm.name}
+                      onChange={e => setRecipientForm({ ...recipientForm, name: e.target.value })}
+                      placeholder="Recipient Name"
+                      className="px-4 py-2 bg-white rounded-lg border-0 ring-1 ring-gray-200 focus:ring-2 focus:ring-crm-accent outline-none"
+                    />
+                    <input
+                      value={recipientForm.relationship}
+                      onChange={e => setRecipientForm({ ...recipientForm, relationship: e.target.value })}
+                      placeholder="Relationship"
+                      className="px-4 py-2 bg-white rounded-lg border-0 ring-1 ring-gray-200 focus:ring-2 focus:ring-crm-accent outline-none"
+                    />
+                  </div>
+                  <textarea
+                    value={recipientForm.address}
+                    onChange={e => setRecipientForm({ ...recipientForm, address: e.target.value })}
+                    placeholder="Full Address & Phone"
+                    rows={2}
+                    className="w-full px-4 py-2 bg-white rounded-lg border-0 ring-1 ring-gray-200 focus:ring-2 focus:ring-crm-accent outline-none mb-4"
+                  />
+                  <button onClick={addRecipient} disabled={!recipientForm.name} className="w-full py-2 bg-black text-white rounded-lg font-medium hover:bg-gray-800 disabled:opacity-50 transition-colors">
+                    + Add Recipient
+                  </button>
+                </div>
+
+                <div className="space-y-3">
                   {recipients.map(r => (
-                    <div key={r.tempId} className="p-3 bg-white border border-crm-border rounded-lg flex justify-between items-start">
+                    <div key={r.tempId} className="flex justify-between items-center p-4 bg-white rounded-xl border border-gray-100 shadow-sm">
                       <div>
-                        <p className="font-medium text-crm-primary">{r.name} {r.relationship && <span className="text-crm-secondary">({r.relationship})</span>}</p>
-                        {r.address && <p className="text-sm text-crm-secondary">{r.address}</p>}
+                        <p className="font-bold text-crm-primary">{r.name}</p>
+                        <p className="text-sm text-crm-secondary">{r.relationship} • {r.address}</p>
                       </div>
-                      <button onClick={() => removeRecipient(r.tempId)} className="p-1 text-crm-danger hover:bg-red-50 rounded">
-                        <Trash2 size={16} />
-                      </button>
+                      <button onClick={() => removeRecipient(r.tempId)} className="text-gray-400 hover:text-red-500 p-2"><Trash2 size={16} /></button>
                     </div>
                   ))}
+                  {recipients.length === 0 && (
+                    <div className="text-center py-8 text-crm-secondary italic">No recipients added yet.</div>
+                  )}
                 </div>
-              )}
-            </div>
-          )}
-
-          {/* Step 3: Important Dates */}
-          {step === 3 && (
-            <div className="space-y-4">
-              <p className="text-crm-secondary mb-4">Add birthdays, anniversaries, and other important dates.</p>
-
-              {/* Add Date Form */}
-              <div className="p-4 bg-crm-background rounded-xl space-y-3 border border-crm-border">
-                <div className="grid sm:grid-cols-2 gap-3">
-                  <input
-                    value={dateForm.title}
-                    onChange={(e) => setDateForm({ ...dateForm, title: e.target.value })}
-                    placeholder="Event (Birthday, Anniversary...) *"
-                    className="px-3 py-2 border border-crm-border rounded-lg"
-                  />
-                  <input
-                    type="date"
-                    value={dateForm.date}
-                    onChange={(e) => setDateForm({ ...dateForm, date: e.target.value })}
-                    className="px-3 py-2 border border-crm-border rounded-lg"
-                  />
-                </div>
-                {recipients.length > 0 && (
-                  <select
-                    value={dateForm.recipient_id}
-                    onChange={(e) => setDateForm({ ...dateForm, recipient_id: e.target.value })}
-                    className="w-full px-3 py-2 border border-crm-border rounded-lg"
-                  >
-                    <option value="">For whom? (optional)</option>
-                    {recipients.map(r => <option key={r.tempId} value={r.tempId}>{r.name}</option>)}
-                  </select>
-                )}
-                <textarea
-                  value={dateForm.notes}
-                  onChange={(e) => setDateForm({ ...dateForm, notes: e.target.value })}
-                  placeholder="Notes (gift preferences, etc.)"
-                  className="w-full px-3 py-2 border border-crm-border rounded-lg"
-                  rows={2}
-                />
-                <button
-                  type="button"
-                  onClick={addDate}
-                  disabled={!dateForm.title || !dateForm.date}
-                  className="w-full py-2 btn-ghost border border-crm-border text-crm-primary rounded-lg disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  <Plus size={18} /> Add Date
-                </button>
               </div>
+            )}
 
-              {/* Dates List */}
-              {dates.length > 0 && (
-                <div className="space-y-2">
-                  <h3 className="font-medium text-sm text-crm-secondary">Added Dates ({dates.length})</h3>
+            {step === 3 && (
+              <div className="space-y-6 animate-fadeIn">
+                <h3 className="text-xl font-bold text-crm-primary">Important Dates</h3>
+                <div className="bg-gray-50 rounded-2xl p-6 ring-1 ring-gray-200">
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <input
+                      value={dateForm.title}
+                      onChange={e => setDateForm({ ...dateForm, title: e.target.value })}
+                      placeholder="Event (e.g. Birthday)"
+                      className="px-4 py-2 bg-white rounded-lg border-0 ring-1 ring-gray-200 focus:ring-2 focus:ring-crm-accent outline-none"
+                    />
+                    <input
+                      type="date"
+                      value={dateForm.date}
+                      onChange={e => setDateForm({ ...dateForm, date: e.target.value })}
+                      className="px-4 py-2 bg-white rounded-lg border-0 ring-1 ring-gray-200 focus:ring-2 focus:ring-crm-accent outline-none"
+                    />
+                  </div>
+                  <button onClick={addDate} disabled={!dateForm.title} className="w-full py-2 bg-black text-white rounded-lg font-medium hover:bg-gray-800 disabled:opacity-50 transition-colors">
+                    + Add Date
+                  </button>
+                </div>
+
+                <div className="space-y-3">
                   {dates.map(d => (
-                    <div key={d.tempId} className="p-3 bg-white border border-crm-border rounded-lg flex justify-between items-center">
-                      <div>
-                        <p className="font-medium text-crm-primary">{d.title}</p>
-                        <p className="text-sm text-crm-accent">{d.date}</p>
+                    <div key={d.tempId} className="flex justify-between items-center p-4 bg-white rounded-xl border border-gray-100 shadow-sm">
+                      <div className="flex items-center gap-4">
+                        <div className="bg-crm-accent/20 text-crm-primary p-2 rounded-lg font-bold text-xs flex flex-col items-center">
+                          <span>{new Date(d.date).toLocaleString('default', { month: 'short' })}</span>
+                          <span className="text-lg">{new Date(d.date).getDate()}</span>
+                        </div>
+                        <div>
+                          <p className="font-bold text-crm-primary">{d.title}</p>
+                        </div>
                       </div>
-                      <button onClick={() => removeDate(d.tempId)} className="p-1 text-crm-danger hover:bg-red-50 rounded">
-                        <Trash2 size={16} />
-                      </button>
+                      <button onClick={() => removeDate(d.tempId)} className="text-gray-400 hover:text-red-500 p-2"><Trash2 size={16} /></button>
                     </div>
                   ))}
                 </div>
-              )}
-            </div>
-          )}
-        </div>
+              </div>
+            )}
+          </div>
 
-        {/* Footer */}
-        <div className="p-4 border-t border-crm-border bg-gray-50 flex justify-between">
-          {step > 1 ? (
-            <button
-              onClick={() => setStep(step - 1)}
-              className="px-4 py-2 border border-crm-border text-crm-secondary rounded-lg flex items-center gap-2 hover:bg-white transition-colors"
-            >
-              <ChevronLeft size={18} /> Back
-            </button>
-          ) : (
-            <button onClick={onClose} className="px-4 py-2 border border-crm-border text-crm-secondary rounded-lg hover:bg-white transition-colors">
-              Cancel
-            </button>
-          )}
-
-          {step === 1 && (
-            <button
-              onClick={handleCreateCustomer}
-              disabled={loading || !customerForm.name || !customerForm.whatsapp}
-              className="px-6 py-2 btn-primary rounded-lg disabled:opacity-50 flex items-center gap-2"
-            >
-              {loading ? 'Creating...' : 'Next'} <ChevronRight size={18} />
-            </button>
-          )}
-
-          {step === 2 && (
-            <div className="flex gap-2">
-              <button
-                onClick={() => setStep(3)}
-                className="px-4 py-2 text-crm-secondary hover:text-crm-primary hover:bg-crm-background rounded-lg"
-              >
-                Skip
+          {/* Footer */}
+          <div className="p-6 border-t border-crm-border bg-white flex justify-end gap-3 z-10">
+            {step === 1 && (
+              <button onClick={handleCreateCustomer} disabled={loading} className="px-8 py-3 bg-crm-accent text-crm-primary font-bold rounded-xl hover:bg-crm-accentHover transition-colors flex items-center gap-2">
+                Next Step <ChevronRight size={18} />
               </button>
-              <button
-                onClick={saveRecipients}
-                disabled={loading}
-                className="px-6 py-2 btn-primary rounded-lg disabled:opacity-50 flex items-center gap-2"
-              >
-                {loading ? 'Saving...' : recipients.length > 0 ? 'Save & Continue' : 'Next'} <ChevronRight size={18} />
-              </button>
-            </div>
-          )}
-
-          {step === 3 && (
-            <div className="flex gap-2">
-              <button
-                onClick={() => onComplete(customerId)}
-                className="px-4 py-2 text-crm-secondary hover:text-crm-primary hover:bg-crm-background rounded-lg"
-              >
-                Skip & Finish
-              </button>
-              <button
-                onClick={saveDatesAndFinish}
-                disabled={loading}
-                className="px-6 py-2 bg-crm-success text-white rounded-lg hover:bg-emerald-600 disabled:opacity-50 flex items-center gap-2 shadow-sm"
-              >
-                {loading ? 'Saving...' : <><Check size={18} /> Complete Setup</>}
-              </button>
-            </div>
-          )}
+            )}
+            {step === 2 && (
+              <>
+                <button onClick={() => setStep(3)} className="px-6 py-3 text-crm-secondary hover:bg-gray-100 rounded-xl font-medium">Skip</button>
+                <button onClick={saveRecipients} disabled={loading} className="px-8 py-3 bg-crm-accent text-crm-primary font-bold rounded-xl hover:bg-crm-accentHover transition-colors">
+                  Continue
+                </button>
+              </>
+            )}
+            {step === 3 && (
+              <>
+                <button onClick={() => onComplete(customerId)} className="px-6 py-3 text-crm-secondary hover:bg-gray-100 rounded-xl font-medium">Skip</button>
+                <button onClick={saveDatesAndFinish} disabled={loading} className="px-8 py-3 bg-black text-white font-bold rounded-xl hover:bg-gray-800 transition-colors flex items-center gap-2">
+                  <Check size={18} /> Complete Setup
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -91,7 +91,7 @@ body {
 }
 
 .btn-primary {
-  @apply bg-crm-primary text-white shadow-soft hover:bg-gray-800 active:scale-95 transition-all duration-200;
+  @apply bg-crm-accent text-crm-primary font-medium shadow-soft hover:bg-crm-accentHover active:scale-95 transition-all duration-200;
 }
 
 .btn-ghost {

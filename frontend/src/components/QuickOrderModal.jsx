@@ -110,245 +110,269 @@ export default function QuickOrderModal({ onClose, preselectedCustomer = null, p
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
-        {/* Header */}
-        <div className="p-4 border-b border-crm-border flex justify-between items-center bg-white">
-          <h2 className="text-lg font-bold text-crm-primary flex items-center gap-2">
-            <Zap size={20} className="text-crm-warning" /> Quick Order
-          </h2>
-          <button onClick={onClose} className="p-2 hover:bg-crm-background rounded-lg text-crm-secondary hover:text-crm-primary">
-            <X size={20} />
-          </button>
-        </div>
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-3xl w-full max-w-4xl h-[600px] flex overflow-hidden shadow-2xl ring-1 ring-black/5">
 
-        {/* Progress */}
-        <div className="px-4 py-3 bg-crm-background border-b border-crm-border">
-          <div className="flex items-center justify-between text-sm">
-            {['Customer', 'Package', 'Review'].map((label, i) => (
-              <div key={label} className="flex items-center">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${step > i + 1 ? 'bg-crm-success text-white' :
-                    step === i + 1 ? 'bg-crm-primary text-white' : 'bg-gray-200 text-gray-500'
+        {/* Left Sidebar - Steps */}
+        <div className="w-1/3 bg-gray-50 p-6 border-r border-crm-border flex flex-col">
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-crm-primary flex items-center gap-2">
+              <Zap className="text-crm-accent fill-crm-accent" size={24} /> Quick Order
+            </h2>
+            <p className="text-sm text-crm-secondary mt-1">Create a new order in 3 simple steps.</p>
+          </div>
+
+          <div className="space-y-6 flex-1">
+            {['Customer Selection', 'Package & Items', 'Review & Confirm'].map((label, i) => (
+              <div key={label} className="relative flex gap-4">
+                {/* Vertical Line */}
+                {i < 2 && (
+                  <div className={`absolute left-4 top-8 bottom-[-24px] w-0.5 ${step > i + 1 ? 'bg-crm-accent' : 'bg-gray-200'}`} />
+                )}
+
+                <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center border-2 transition-colors ${step > i + 1 ? 'bg-crm-accent border-crm-accent text-crm-primary' :
+                    step === i + 1 ? 'bg-crm-primary border-crm-primary text-white' :
+                      'bg-white border-gray-300 text-gray-400'
                   }`}>
-                  {step > i + 1 ? <Check size={14} /> : i + 1}
+                  {step > i + 1 ? <Check size={16} /> : <span className="text-xs font-bold">{i + 1}</span>}
                 </div>
-                <span className={`ml-1 ${step === i + 1 ? 'text-crm-primary font-medium' : 'text-crm-secondary'}`}>{label}</span>
-                {i < 2 && <ChevronRight className="mx-2 text-gray-300" size={16} />}
+                <div>
+                  <p className={`font-medium text-sm ${step === i + 1 ? 'text-crm-primary' : 'text-crm-secondary'}`}>
+                    {label}
+                  </p>
+                </div>
               </div>
             ))}
           </div>
+
+          <button onClick={onClose} className="flex items-center gap-2 text-crm-secondary hover:text-crm-primary mt-auto text-sm font-medium">
+            <ChevronRight className="rotate-180" size={16} /> Cancel Order
+          </button>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4">
-          {/* Step 1: Customer */}
-          {step === 1 && (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2 text-crm-secondary">Select Customer</label>
-                <select
-                  value={customerId}
-                  onChange={(e) => setCustomerId(e.target.value)}
-                  className="w-full px-4 py-3 border border-crm-border rounded-xl bg-white focus:ring-1 focus:ring-crm-primary outline-none"
-                >
-                  <option value="">Choose a customer...</option>
-                  {customers.map(c => (
-                    <option key={c.id} value={c.id}>{c.name} ({c.whatsapp})</option>
-                  ))}
-                </select>
-              </div>
+        {/* Right Content */}
+        <div className="flex-1 flex flex-col bg-white">
+          <div className="flex-1 overflow-y-auto p-8 relative">
 
-              {customerId && recipients.length > 0 && (
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-crm-secondary">Deliver To</label>
-                  <div className="space-y-2">
-                    {recipients.map(r => (
-                      <button
-                        key={r.id}
-                        onClick={() => setRecipientId(r.id)}
-                        className={`w-full p-3 border rounded-xl text-left transition-all ${recipientId == r.id
-                            ? 'border-crm-primary bg-crm-background ring-1 ring-crm-primary'
-                            : 'border-crm-border hover:border-crm-secondary'
-                          }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <Users size={18} className="text-crm-secondary" />
-                          <div>
-                            <p className="font-medium text-crm-primary">{r.name}</p>
-                            {r.relationship && <p className="text-xs text-crm-secondary">{r.relationship}</p>}
-                          </div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
+            {/* Step 1: Customer */}
+            {step === 1 && (
+              <div className="space-y-6 animate-fadeIn">
+                <h3 className="text-xl font-bold text-crm-primary">Find Customer</h3>
 
-              {customerId && recipients.length === 0 && (
-                <div className="p-4 bg-crm-background rounded-xl text-center border border-crm-border">
-                  <p className="text-sm text-crm-secondary">No recipients found for this customer</p>
-                  <button
-                    onClick={() => navigate(`/customers/${customerId}`)}
-                    className="text-sm text-crm-accent hover:underline mt-1"
+                <div className="group">
+                  <label className="block text-sm font-medium mb-2 text-crm-secondary group-focus-within:text-crm-primary">Select Customer</label>
+                  <select
+                    value={customerId}
+                    onChange={(e) => setCustomerId(e.target.value)}
+                    className="w-full px-4 py-3 bg-gray-50 border-0 rounded-xl ring-1 ring-gray-200 focus:ring-2 focus:ring-crm-accent outline-none transition-all"
                   >
-                    Add recipients first →
-                  </button>
+                    <option value="">Choose a customer...</option>
+                    {customers.map(c => (
+                      <option key={c.id} value={c.id}>{c.name} ({c.whatsapp})</option>
+                    ))}
+                  </select>
                 </div>
-              )}
-            </div>
-          )}
 
-          {/* Step 2: Package */}
-          {step === 2 && (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2 text-crm-secondary">Select Package Template</label>
-                {templates.length === 0 ? (
-                  <div className="p-4 bg-crm-background rounded-xl text-center">
-                    <Sparkles className="mx-auto text-crm-secondary mb-2" size={32} />
-                    <p className="text-sm text-crm-secondary">No templates available</p>
-                    <button
-                      onClick={() => navigate('/invoices/new')}
-                      className="text-sm text-crm-accent hover:underline mt-1"
-                    >
-                      Create a full order instead →
-                    </button>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {templates.map(t => (
-                      <button
-                        key={t.id}
-                        onClick={() => setTemplateId(t.id)}
-                        className={`w-full p-3 border rounded-xl text-left transition-all ${templateId == t.id
-                            ? 'border-crm-primary bg-crm-background ring-1 ring-crm-primary'
-                            : 'border-crm-border hover:border-crm-secondary'
-                          }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <Package size={18} className="text-crm-secondary" />
+                {customerId && recipients.length > 0 && (
+                  <div>
+                    <label className="block text-sm font-medium mb-3 text-crm-secondary">Deliver To</label>
+                    <div className="space-y-3">
+                      {recipients.map(r => (
+                        <button
+                          key={r.id}
+                          onClick={() => setRecipientId(r.id)}
+                          className={`w-full p-4 border rounded-xl text-left transition-all ${recipientId == r.id
+                            ? 'border-crm-primary bg-crm-background ring-1 ring-crm-primary shadow-sm'
+                            : 'border-crm-border hover:border-crm-primary hover:bg-gray-50'
+                            }`}
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className={`p-2 rounded-full ${recipientId == r.id ? 'bg-crm-primary text-white' : 'bg-gray-100 text-gray-500'}`}>
+                              <Users size={18} />
+                            </div>
                             <div>
-                              <p className="font-medium text-crm-primary">{t.name}</p>
-                              <p className="text-xs text-crm-secondary">{t.items?.length || 0} items</p>
+                              <p className="font-bold text-crm-primary">{r.name}</p>
+                              {r.relationship && <p className="text-xs text-crm-secondary">{r.relationship}</p>}
                             </div>
                           </div>
-                          <span className="font-medium text-crm-primary">Rs. {parseFloat(t.total_price || 0).toLocaleString()}</span>
-                        </div>
-                      </button>
-                    ))}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {customerId && recipients.length === 0 && (
+                  <div className="p-6 bg-gray-50 rounded-2xl text-center border-2 border-dashed border-gray-200">
+                    <p className="text-crm-secondary font-medium">No recipients found</p>
+                    <button
+                      onClick={() => navigate(`/customers/${customerId}`)}
+                      className="text-sm text-crm-primary underline font-bold mt-2 hover:text-crm-accentHover"
+                    >
+                      Add recipients to profile →
+                    </button>
                   </div>
                 )}
               </div>
+            )}
 
-              {templateId && (
+            {/* Step 2: Package */}
+            {step === 2 && (
+              <div className="space-y-6 animate-fadeIn">
+                <h3 className="text-xl font-bold text-crm-primary">Select Package</h3>
+
                 <div>
-                  <label className="block text-sm font-medium mb-2 text-crm-secondary">Adjust Price (optional)</label>
-                  <input
-                    type="number"
-                    value={packagePrice}
-                    onChange={(e) => setPackagePrice(parseFloat(e.target.value) || 0)}
-                    className="w-full px-4 py-3 border border-crm-border rounded-xl focus:ring-1 focus:ring-crm-primary outline-none"
+                  {templates.length === 0 ? (
+                    <div className="p-8 bg-gray-50 rounded-2xl text-center">
+                      <Sparkles className="mx-auto text-crm-secondary mb-3" size={32} />
+                      <p className="text-crm-secondary">No templates available</p>
+                      <button
+                        onClick={() => navigate('/invoices/new')}
+                        className="text-sm font-bold text-crm-primary underline mt-2"
+                      >
+                        Go to Full Order Form →
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="grid gap-3">
+                      {templates.map(t => (
+                        <button
+                          key={t.id}
+                          onClick={() => setTemplateId(t.id)}
+                          className={`w-full p-4 border rounded-xl text-left transition-all ${templateId == t.id
+                            ? 'border-crm-primary bg-crm-background ring-1 ring-crm-primary shadow-md'
+                            : 'border-crm-border hover:border-crm-primary hover:bg-gray-50'
+                            }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                              <div className={`p-2 rounded-lg ${templateId == t.id ? 'bg-crm-accent text-crm-primary' : 'bg-gray-100 text-gray-500'}`}>
+                                <Package size={20} />
+                              </div>
+                              <div>
+                                <p className="font-bold text-crm-primary">{t.name}</p>
+                                <p className="text-xs text-crm-secondary">{t.items?.length || 0} items included</p>
+                              </div>
+                            </div>
+                            <span className="font-bold text-crm-primary text-lg">Rs. {parseFloat(t.total_price || 0).toLocaleString()}</span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {templateId && (
+                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex gap-4">
+                    <div className="flex-1">
+                      <label className="block text-xs font-bold uppercase text-crm-secondary mb-1">Custom Price</label>
+                      <input
+                        type="number"
+                        value={packagePrice}
+                        onChange={(e) => setPackagePrice(parseFloat(e.target.value) || 0)}
+                        className="w-full bg-white px-3 py-2 rounded-lg border border-gray-200 font-medium"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <label className="block text-xs font-bold uppercase text-crm-secondary mb-1">Delivery Zone</label>
+                      <select
+                        value={deliveryZoneId}
+                        onChange={(e) => setDeliveryZoneId(e.target.value)}
+                        className="w-full bg-white px-3 py-2 rounded-lg border border-gray-200 text-sm"
+                      >
+                        <option value="">Select a zone...</option>
+                        {deliveryZones.map(z => (
+                          <option key={z.id} value={z.id}>{z.name} (+ Rs. {parseFloat(z.delivery_fee).toLocaleString()})</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Step 3: Review */}
+            {step === 3 && (
+              <div className="space-y-6 animate-fadeIn">
+                <h3 className="text-xl font-bold text-crm-primary">Review Order</h3>
+
+                <div className="p-6 bg-gray-50 rounded-2xl space-y-4 border border-gray-100 ring-1 ring-black/5">
+                  <div className="flex justify-between items-center pb-4 border-b border-gray-200">
+                    <span className="text-crm-secondary font-medium">Customer</span>
+                    <div className="text-right">
+                      <p className="font-bold text-crm-primary">{selectedCustomer?.name}</p>
+                      <p className="text-xs text-crm-secondary">{selectedRecipient?.name ? `to ${selectedRecipient.name}` : 'No recipient selected'}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center pb-4 border-b border-gray-200">
+                    <span className="text-crm-secondary font-medium">Package</span>
+                    <div className="text-right">
+                      <p className="font-bold text-crm-primary">{selectedTemplate?.name}</p>
+                      <p className="text-xs text-crm-secondary">{selectedTemplate?.items?.length} items</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 pt-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-crm-secondary">Subtotal</span>
+                      <span className="font-medium">Rs. {packagePrice.toLocaleString()}</span>
+                    </div>
+                    {deliveryFee > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-crm-secondary">Delivery ({selectedZone?.name})</span>
+                        <span className="font-medium">Rs. {deliveryFee.toLocaleString()}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between pt-3 border-t border-gray-300 mt-2">
+                      <span className="font-bold text-lg text-crm-primary">Total</span>
+                      <span className="font-bold text-lg text-crm-primary">Rs. {total.toLocaleString()}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-crm-primary mb-2">Gift Message</label>
+                  <textarea
+                    value={giftMessage}
+                    onChange={(e) => setGiftMessage(e.target.value)}
+                    placeholder="Write a lovely message..."
+                    className="w-full px-4 py-3 bg-gray-50 border-0 rounded-xl ring-1 ring-gray-200 focus:ring-2 focus:ring-crm-accent outline-none transition-all"
+                    rows={3}
                   />
                 </div>
-              )}
-
-              <div>
-                <label className="block text-sm font-medium mb-2 text-crm-secondary">Delivery Zone</label>
-                <select
-                  value={deliveryZoneId}
-                  onChange={(e) => setDeliveryZoneId(e.target.value)}
-                  className="w-full px-4 py-3 border border-crm-border rounded-xl bg-white focus:ring-1 focus:ring-crm-primary outline-none"
-                >
-                  <option value="">Select zone (optional)</option>
-                  {deliveryZones.map(z => (
-                    <option key={z.id} value={z.id}>{z.name} - Rs. {parseFloat(z.delivery_fee).toLocaleString()}</option>
-                  ))}
-                </select>
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
-          {/* Step 3: Review */}
-          {step === 3 && (
-            <div className="space-y-4">
-              <div className="p-4 bg-crm-background rounded-xl space-y-3 border border-crm-border">
-                <div className="flex justify-between">
-                  <span className="text-crm-secondary">Customer</span>
-                  <span className="font-medium text-crm-primary">{selectedCustomer?.name}</span>
-                </div>
-                {selectedRecipient && (
-                  <div className="flex justify-between">
-                    <span className="text-crm-secondary">Deliver To</span>
-                    <span className="font-medium text-crm-primary">{selectedRecipient.name}</span>
-                  </div>
-                )}
-                <div className="flex justify-between">
-                  <span className="text-crm-secondary">Package</span>
-                  <span className="font-medium text-crm-primary">{selectedTemplate?.name}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-crm-secondary">Package Price</span>
-                  <span className="font-medium text-crm-primary">Rs. {packagePrice.toLocaleString()}</span>
-                </div>
-                {deliveryFee > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-crm-secondary">Delivery ({selectedZone?.name})</span>
-                    <span className="font-medium text-crm-primary">Rs. {deliveryFee.toLocaleString()}</span>
-                  </div>
-                )}
-                <div className="flex justify-between pt-2 border-t border-crm-border">
-                  <span className="font-bold text-crm-primary">Total</span>
-                  <span className="font-bold text-crm-primary">Rs. {total.toLocaleString()}</span>
-                </div>
-              </div>
+          {/* Footer */}
+          <div className="p-6 border-t border-crm-border bg-white flex justify-end gap-3 z-10">
+            {step > 1 && (
+              <button
+                onClick={() => setStep(step - 1)}
+                className="px-6 py-3 text-crm-secondary hover:bg-gray-100 rounded-xl font-medium transition-colors"
+              >
+                Back
+              </button>
+            )}
 
-              <div>
-                <label className="block text-sm font-medium mb-2 text-crm-secondary">Gift Message (optional)</label>
-                <textarea
-                  value={giftMessage}
-                  onChange={(e) => setGiftMessage(e.target.value)}
-                  placeholder="Add a personalized message..."
-                  className="w-full px-4 py-3 border border-crm-border rounded-xl focus:ring-1 focus:ring-crm-primary outline-none"
-                  rows={3}
-                />
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="p-4 border-t border-crm-border bg-gray-50 flex justify-between">
-          {step > 1 ? (
-            <button
-              onClick={() => setStep(step - 1)}
-              className="px-4 py-2 border border-crm-border text-crm-secondary rounded-lg hover:bg-white transition-colors"
-            >
-              Back
-            </button>
-          ) : (
-            <button onClick={onClose} className="px-4 py-2 border border-crm-border text-crm-secondary rounded-lg hover:bg-white transition-colors">
-              Cancel
-            </button>
-          )}
-
-          {step < 3 ? (
-            <button
-              onClick={() => setStep(step + 1)}
-              disabled={!canProceed()}
-              className="px-6 py-2 btn-primary rounded-lg disabled:opacity-50 flex items-center gap-2"
-            >
-              Next <ChevronRight size={18} />
-            </button>
-          ) : (
-            <button
-              onClick={handleCreateOrder}
-              disabled={loading}
-              className="px-6 py-2 bg-crm-success text-white rounded-lg hover:bg-emerald-600 disabled:opacity-50 flex items-center gap-2 shadow-sm"
-            >
-              {loading ? 'Creating...' : <><Check size={18} /> Create Order</>}
-            </button>
-          )}
+            {step < 3 ? (
+              <button
+                onClick={() => setStep(step + 1)}
+                disabled={!canProceed()}
+                className="px-8 py-3 btn-primary rounded-xl disabled:opacity-50 flex items-center gap-2 font-bold"
+              >
+                Next Step <ChevronRight size={18} />
+              </button>
+            ) : (
+              <button
+                onClick={handleCreateOrder}
+                disabled={loading}
+                className="px-8 py-3 bg-crm-success text-white rounded-xl hover:bg-emerald-600 disabled:opacity-50 flex items-center gap-2 shadow-lg hover:shadow-xl transition-all font-bold"
+              >
+                {loading ? 'Processing...' : <><Check size={18} /> Confirm Order</>}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

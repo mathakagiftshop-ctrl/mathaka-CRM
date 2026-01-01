@@ -49,12 +49,12 @@ export default function Layout() {
         to={item.path}
         onClick={() => setSidebarOpen(false)}
         className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 group ${isActive
-          ? 'bg-crm-primary text-white shadow-sm'
-          : 'text-crm-secondary hover:bg-gray-100 hover:text-crm-primary'
+          ? 'bg-crm-accent text-crm-primary font-bold shadow-sm'
+          : 'text-crm-secondary hover:bg-gray-200 hover:text-crm-primary'
           }`}
       >
         <item.icon size={18} className={`transition-transform duration-200 ${isActive ? '' : 'group-hover:scale-105'}`} />
-        <span className="font-medium text-sm">{item.label}</span>
+        <span className="text-sm">{item.label}</span>
       </Link>
     );
   };
