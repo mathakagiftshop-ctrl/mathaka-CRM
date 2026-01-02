@@ -239,7 +239,7 @@ export default function Customers() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+                  className="px-4 py-2 bg-crm-primary text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 font-medium"
                 >
                   {submitting ? 'Adding...' : duplicateWarning ? 'Add Anyway' : 'Add Customer'}
                 </button>

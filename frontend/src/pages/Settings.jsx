@@ -93,7 +93,7 @@ export default function Settings() {
 
   return (
     <div className="space-y-6 max-w-2xl">
-      <h1 className="text-2xl font-bold">Settings</h1>
+      <h1 className="text-2xl font-bold text-crm-primary">Settings</h1>
 
       {message && (
         <div className={`px-4 py-3 rounded-lg ${message.includes('Error') ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
@@ -122,7 +122,7 @@ export default function Settings() {
             />
             <label
               htmlFor="logo-upload"
-              className="cursor-pointer px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 inline-block"
+              className="cursor-pointer px-4 py-2 bg-crm-primary text-white rounded-lg hover:bg-gray-800 inline-block font-medium transition-colors"
             >
               Upload Logo
             </label>
@@ -176,11 +176,11 @@ export default function Settings() {
       <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
         <div className="flex justify-between items-center">
           <h2 className="font-semibold flex items-center gap-2"><Phone size={18} /> Phone Numbers</h2>
-          <button onClick={addPhoneNumber} className="text-purple-600 text-sm flex items-center gap-1">
+          <button onClick={addPhoneNumber} className="text-crm-primary text-sm flex items-center gap-1 font-medium hover:underline">
             <Plus size={16} /> Add Phone
           </button>
         </div>
-        
+
         {phoneNumbers.length === 0 ? (
           <p className="text-gray-500 text-sm">No phone numbers added. Click "Add Phone" to add one.</p>
         ) : (
@@ -214,11 +214,11 @@ export default function Settings() {
       <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
         <div className="flex justify-between items-center">
           <h2 className="font-semibold flex items-center gap-2"><CreditCard size={18} /> Bank Accounts</h2>
-          <button onClick={addBankAccount} className="text-purple-600 text-sm flex items-center gap-1">
+          <button onClick={addBankAccount} className="text-crm-primary text-sm flex items-center gap-1 font-medium hover:underline">
             <Plus size={16} /> Add Account
           </button>
         </div>
-        
+
         {bankAccounts.length === 0 ? (
           <p className="text-gray-500 text-sm">No bank accounts added. Click "Add Account" to add one.</p>
         ) : (
@@ -293,7 +293,7 @@ export default function Settings() {
       <button
         onClick={handleSave}
         disabled={saving}
-        className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+        className="flex items-center gap-2 px-6 py-3 bg-crm-primary text-white rounded-xl hover:bg-gray-800 disabled:opacity-50 font-bold transition-colors"
       >
         <Save size={18} /> {saving ? 'Saving...' : 'Save Settings'}
       </button>

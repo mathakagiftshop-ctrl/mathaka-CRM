@@ -13,7 +13,7 @@ export default function VendorOrders() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [filter, setFilter] = useState({ vendor_id: '', status: '' });
-  
+
   const [form, setForm] = useState({
     invoice_id: '',
     vendor_id: '',
@@ -141,7 +141,7 @@ export default function VendorOrders() {
         <h1 className="text-2xl font-bold">Vendor Orders</h1>
         <button
           onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
+          className="flex items-center gap-2 bg-crm-primary text-white px-4 py-2 rounded-lg hover:bg-gray-800 font-medium"
         >
           <Plus size={20} /> Assign to Vendor
         </button>
@@ -214,7 +214,7 @@ export default function VendorOrders() {
                       </span>
                     </div>
                     <p className="text-sm text-gray-600 truncate">{order.description}</p>
-                    <Link to={`/invoices/${order.invoice_id}`} className="text-xs text-purple-600 hover:underline">
+                    <Link to={`/invoices/${order.invoice_id}`} className="text-xs text-crm-primary hover:underline">
                       {order.invoice_number} • {order.customer_name}
                     </Link>
                     <div className="flex items-center gap-4 mt-2 text-sm">
@@ -282,11 +282,10 @@ export default function VendorOrders() {
                           <div key={payment.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg text-sm">
                             <div>
                               <span className="font-medium">Rs. {parseFloat(payment.amount).toLocaleString()}</span>
-                              <span className={`ml-2 text-xs px-1.5 py-0.5 rounded ${
-                                payment.payment_type === 'advance' ? 'bg-blue-100 text-blue-700' :
-                                payment.payment_type === 'final' ? 'bg-green-100 text-green-700' :
-                                'bg-gray-100 text-gray-700'
-                              }`}>
+                              <span className={`ml-2 text-xs px-1.5 py-0.5 rounded ${payment.payment_type === 'advance' ? 'bg-blue-100 text-blue-700' :
+                                  payment.payment_type === 'final' ? 'bg-green-100 text-green-700' :
+                                    'bg-gray-100 text-gray-700'
+                                }`}>
                                 {payment.payment_type}
                               </span>
                               <span className="text-gray-500 ml-2">
@@ -393,7 +392,7 @@ export default function VendorOrders() {
                 <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 border rounded-lg">
                   Cancel
                 </button>
-                <button type="submit" className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+                <button type="submit" className="px-4 py-2 bg-crm-primary text-white rounded-lg hover:bg-gray-800 font-medium">
                   Assign
                 </button>
               </div>
@@ -412,7 +411,7 @@ export default function VendorOrders() {
                 <X size={20} />
               </button>
             </div>
-            
+
             <div className="mb-4 p-3 bg-gray-50 rounded-lg">
               <p className="font-medium">{selectedOrder.vendor_name}</p>
               <p className="text-sm text-gray-500">{selectedOrder.description}</p>

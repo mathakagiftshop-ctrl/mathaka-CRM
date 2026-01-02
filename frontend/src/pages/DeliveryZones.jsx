@@ -50,7 +50,7 @@ export default function DeliveryZones() {
         <h1 className="text-2xl font-bold">Delivery Zones</h1>
         <button
           onClick={() => { setForm({ name: '', areas: '', delivery_fee: '' }); setEditingId(null); setShowModal(true); }}
-          className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
+          className="flex items-center gap-2 bg-crm-primary text-white px-4 py-2 rounded-lg hover:bg-gray-800 font-medium"
         >
           <Plus size={20} /> Add Zone
         </button>
@@ -75,7 +75,7 @@ export default function DeliveryZones() {
               </div>
               <div className="flex items-center gap-4">
                 <span className="font-semibold text-blue-600">Rs. {parseFloat(zone.delivery_fee).toLocaleString()}</span>
-                <button onClick={() => handleEdit(zone)} className="p-2 text-gray-500 hover:text-purple-600">
+                <button onClick={() => handleEdit(zone)} className="p-2 text-crm-secondary hover:text-crm-primary">
                   <Edit2 size={18} />
                 </button>
                 <button onClick={() => handleDelete(zone.id)} className="p-2 text-gray-500 hover:text-red-600">
@@ -117,7 +117,7 @@ export default function DeliveryZones() {
               />
               <div className="flex gap-2 justify-end">
                 <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 border rounded-lg">Cancel</button>
-                <button type="submit" className="px-4 py-2 bg-purple-600 text-white rounded-lg">{editingId ? 'Update' : 'Add'}</button>
+                <button type="submit" className="px-4 py-2 bg-crm-primary text-white rounded-lg font-medium">{editingId ? 'Update' : 'Add'}</button>
               </div>
             </form>
           </div>

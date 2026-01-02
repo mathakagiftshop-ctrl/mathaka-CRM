@@ -41,8 +41,8 @@ export default function EventCalendar({ dates, onSendReminder }) {
                             <div
                                 key={i}
                                 className={`w-1.5 h-1.5 rounded-full ${event.title.toLowerCase().includes('birthday') ? 'bg-pink-500' :
-                                        event.title.toLowerCase().includes('anniversary') ? 'bg-red-500' :
-                                            'bg-purple-500'
+                                    event.title.toLowerCase().includes('anniversary') ? 'bg-red-500' :
+                                        'bg-crm-accent'
                                     }`}
                             />
                         ))}
@@ -82,10 +82,10 @@ export default function EventCalendar({ dates, onSendReminder }) {
                 <>
                     <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setShowModal(false)} />
                     <div className="fixed inset-x-4 top-1/2 -translate-y-1/2 max-w-md mx-auto bg-white rounded-2xl shadow-xl z-50 overflow-hidden">
-                        <div className="p-4 border-b bg-purple-50 flex items-center justify-between">
+                        <div className="p-4 border-b bg-gray-50 flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                                <CalendarIcon className="text-purple-600" size={20} />
-                                <h3 className="font-semibold text-purple-900">
+                                <CalendarIcon className="text-crm-primary" size={20} />
+                                <h3 className="font-bold text-crm-primary">
                                     {selectedDate.date.toLocaleDateString('en-US', {
                                         weekday: 'long',
                                         month: 'long',
@@ -113,7 +113,7 @@ export default function EventCalendar({ dates, onSendReminder }) {
 
                                             <Link
                                                 to={`/customers/${event.customer_id}`}
-                                                className="text-sm text-purple-600 hover:underline flex items-center gap-1 mt-1"
+                                                className="text-sm text-crm-primary hover:underline flex items-center gap-1 mt-1 font-medium"
                                                 onClick={() => setShowModal(false)}
                                             >
                                                 <User size={14} />

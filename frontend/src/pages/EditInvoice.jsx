@@ -45,7 +45,7 @@ export default function EditInvoice() {
       setProducts(p.data);
       setPackagingMaterials(pkg.data);
       setDeliveryZones(dz.data);
-      
+
       const invoice = inv.data;
       setInvoiceNumber(invoice.invoice_number);
       setCustomerId(invoice.customer_id);
@@ -93,14 +93,14 @@ export default function EditInvoice() {
           expanded: true
         }]);
       }
-      
+
       // Load recipients for customer
       if (invoice.customer_id) {
         api.get(`/recipients/customer/${invoice.customer_id}`).then(res => {
           setRecipients(res.data);
         });
       }
-      
+
       setLoading(false);
     }).catch(err => {
       console.error('Error loading invoice:', err);
@@ -221,7 +221,7 @@ export default function EditInvoice() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
-    
+
     const validPackages = packages.filter(pkg => pkg.package_name && pkg.items.length > 0);
     if (validPackages.length === 0) {
       alert('Please add at least one package with items');
@@ -344,25 +344,25 @@ export default function EditInvoice() {
             <h2 className="font-semibold text-lg flex items-center gap-2">
               <Gift size={20} /> Gift Packages
             </h2>
-            <button type="button" onClick={addPackage} className="text-purple-600 text-sm flex items-center gap-1 hover:bg-purple-50 px-3 py-2 rounded-lg">
+            <button type="button" onClick={addPackage} className="text-crm-primary text-sm flex items-center gap-1 hover:bg-gray-100 px-3 py-2 rounded-lg border border-crm-border">
               <Plus size={16} /> Add Package
             </button>
           </div>
 
           {packages.map((pkg, pkgIndex) => (
             <div key={pkgIndex} className="bg-white rounded-xl shadow-sm overflow-hidden">
-              <div 
-                className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 flex items-center justify-between cursor-pointer"
+              <div
+                className="p-4 bg-gray-50 border-b border-crm-border flex items-center justify-between cursor-pointer"
                 onClick={() => togglePackageExpand(pkgIndex)}
               >
                 <div className="flex items-center gap-3">
-                  <Gift className="text-purple-600" size={20} />
+                  <Gift className="text-crm-primary" size={20} />
                   <input
                     value={pkg.package_name}
                     onChange={(e) => { e.stopPropagation(); updatePackage(pkgIndex, 'package_name', e.target.value); }}
                     onClick={(e) => e.stopPropagation()}
                     placeholder="Package Name *"
-                    className="bg-transparent border-b border-purple-300 focus:border-purple-600 outline-none px-1 py-1 font-medium w-64"
+                    className="bg-transparent border-b border-gray-300 focus:border-crm-primary outline-none px-1 py-1 font-bold w-64 text-crm-primary"
                     required
                   />
                 </div>
@@ -374,7 +374,7 @@ export default function EditInvoice() {
                       value={pkg.package_price}
                       onChange={(e) => { e.stopPropagation(); updatePackage(pkgIndex, 'package_price', e.target.value); }}
                       onClick={(e) => e.stopPropagation()}
-                      className="w-28 text-right font-bold text-purple-600 bg-white border rounded px-2 py-1"
+                      className="w-28 text-right font-bold text-crm-primary bg-white border border-crm-border rounded px-2 py-1"
                       min="0"
                     />
                   </div>
@@ -395,7 +395,7 @@ export default function EditInvoice() {
                       <label className="block text-sm font-medium mb-2">Quick Add Products</label>
                       <div className="flex flex-wrap gap-2">
                         {products.slice(0, 10).map(p => (
-                          <button key={p.id} type="button" onClick={() => addItemToPackage(pkgIndex, p)} className="px-3 py-2 bg-purple-50 text-purple-700 rounded-lg text-sm hover:bg-purple-100">
+                          <button key={p.id} type="button" onClick={() => addItemToPackage(pkgIndex, p)} className="px-3 py-2 bg-crm-accent/30 text-crm-primary rounded-lg text-sm hover:bg-crm-accent font-medium">
                             {p.name}
                           </button>
                         ))}
@@ -407,11 +407,11 @@ export default function EditInvoice() {
                   <div>
                     <div className="flex justify-between items-center mb-2">
                       <label className="text-sm font-medium">Items in Package</label>
-                      <button type="button" onClick={() => addItemToPackage(pkgIndex)} className="text-purple-600 text-sm flex items-center gap-1">
+                      <button type="button" onClick={() => addItemToPackage(pkgIndex)} className="text-crm-primary text-sm flex items-center gap-1 font-medium hover:underline">
                         <Plus size={14} /> Custom Item
                       </button>
                     </div>
-                    
+
                     {pkg.items.length === 0 ? (
                       <p className="text-gray-400 text-sm py-4 text-center border-2 border-dashed rounded-lg">Add products to this package</p>
                     ) : (
@@ -471,10 +471,10 @@ export default function EditInvoice() {
 
                   {/* Package Summary */}
                   {pkg.items.length > 0 && (
-                    <div className="p-3 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg">
+                    <div className="p-3 bg-gray-50 rounded-lg border border-crm-border">
                       <div className="flex items-center gap-2 mb-2">
-                        <TrendingUp size={16} className="text-green-600" />
-                        <span className="font-medium text-sm">Package Profitability</span>
+                        <TrendingUp size={16} className="text-crm-success" />
+                        <span className="font-medium text-sm text-crm-primary">Package Profitability</span>
                       </div>
                       <div className="grid grid-cols-3 gap-4 text-sm">
                         <div>
@@ -541,14 +541,14 @@ export default function EditInvoice() {
             </div>
             <div className="flex justify-between font-bold text-lg border-t pt-3">
               <span>Total</span>
-              <span className="text-purple-600">Rs. {total.toLocaleString()}</span>
+              <span className="text-crm-primary">Rs. {total.toLocaleString()}</span>
             </div>
           </div>
 
           {/* Profitability Summary */}
-          <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
-            <h3 className="font-medium text-green-800 mb-3 flex items-center gap-2">
-              <TrendingUp size={18} /> Profitability Analysis
+          <div className="p-4 bg-gray-50 rounded-lg border border-crm-border">
+            <h3 className="font-medium text-crm-primary mb-3 flex items-center gap-2">
+              <TrendingUp size={18} className="text-crm-success" /> Profitability Analysis
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
               <div>

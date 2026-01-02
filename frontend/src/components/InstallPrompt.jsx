@@ -37,9 +37,9 @@ export default function InstallPrompt() {
       <button onClick={dismiss} className="absolute top-2 right-2 p-2 text-gray-400">
         <X size={20} />
       </button>
-      
+
       <div className="flex items-start gap-3">
-        <div className="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center flex-shrink-0">
+        <div className="w-12 h-12 bg-crm-accent rounded-xl flex items-center justify-center flex-shrink-0">
           <span className="text-white text-xl">🎁</span>
         </div>
         <div className="flex-1">

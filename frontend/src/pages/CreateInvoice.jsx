@@ -27,7 +27,7 @@ export default function CreateInvoice() {
   const [notes, setNotes] = useState('');
   const [giftMessage, setGiftMessage] = useState('');
   const [loading, setLoading] = useState(false);
-  
+
   // New UX states
   const [showInlineRecipient, setShowInlineRecipient] = useState(false);
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
@@ -70,7 +70,7 @@ export default function CreateInvoice() {
           setRecipientId(res.data[0].id);
         }
       });
-      
+
       // Fetch customer's last order for smart defaults
       api.get(`/customers/${customerId}`).then(res => {
         const customer = res.data;
@@ -85,7 +85,7 @@ export default function CreateInvoice() {
             lastRecipient: lastInvoice.recipient_id
           });
         }
-      }).catch(() => {});
+      }).catch(() => { });
     } else {
       setRecipients([]);
       setCustomerDefaults(null);
@@ -175,18 +175,18 @@ export default function CreateInvoice() {
     const newPackages = [...packages];
     const selected = newPackages[pkgIndex].selectedPackaging;
     const existingIndex = selected.findIndex(p => p.id === material.id);
-    
+
     if (existingIndex >= 0) {
       selected.splice(existingIndex, 1);
     } else {
       selected.push({ ...material, quantity: 1 });
     }
-    
+
     // Recalculate packaging cost
     newPackages[pkgIndex].packaging_cost = selected.reduce(
       (sum, p) => sum + (parseFloat(p.cost_price) || 0) * (p.quantity || 1), 0
     );
-    
+
     setPackages(newPackages);
   };
 
@@ -274,7 +274,7 @@ export default function CreateInvoice() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    
+
     // Validate packages
     const validPackages = packages.filter(pkg => pkg.package_name && pkg.items.length > 0);
     if (validPackages.length === 0) {
@@ -360,7 +360,7 @@ export default function CreateInvoice() {
                   <button
                     type="button"
                     onClick={() => setShowInlineRecipient(true)}
-                    className="px-3 py-2 border rounded-lg text-purple-600 hover:bg-purple-50"
+                    className="px-3 py-2 border border-crm-border rounded-lg text-crm-primary hover:bg-gray-50"
                     title="Add new recipient"
                   >
                     <UserPlus size={20} />
@@ -372,7 +372,7 @@ export default function CreateInvoice() {
                   <button
                     type="button"
                     onClick={() => setShowInlineRecipient(true)}
-                    className="text-sm text-purple-600 hover:underline flex items-center gap-1"
+                    className="text-sm text-crm-primary font-medium hover:underline flex items-center gap-1"
                   >
                     <UserPlus size={16} /> Add recipient now
                   </button>
@@ -384,7 +384,7 @@ export default function CreateInvoice() {
               )}
             </div>
           </div>
-          
+
           {/* Inline Recipient Form */}
           {showInlineRecipient && customerId && (
             <InlineRecipientForm
@@ -435,14 +435,14 @@ export default function CreateInvoice() {
               <button
                 type="button"
                 onClick={() => setShowTemplateSelector(true)}
-                className="text-orange-600 text-sm flex items-center gap-1 hover:bg-orange-50 px-3 py-2 rounded-lg border border-orange-200"
+                className="text-crm-primary text-sm flex items-center gap-1 hover:bg-crm-accent px-3 py-2 rounded-lg border border-crm-border font-medium"
               >
                 <Sparkles size={16} /> Use Template
               </button>
               <button
                 type="button"
                 onClick={addPackage}
-                className="text-purple-600 text-sm flex items-center gap-1 hover:bg-purple-50 px-3 py-2 rounded-lg"
+                className="text-crm-primary text-sm flex items-center gap-1 hover:bg-gray-100 px-3 py-2 rounded-lg border border-crm-border"
               >
                 <Plus size={16} /> Add Package
               </button>
@@ -452,18 +452,18 @@ export default function CreateInvoice() {
           {packages.map((pkg, pkgIndex) => (
             <div key={pkgIndex} className="bg-white rounded-xl shadow-sm overflow-hidden">
               {/* Package Header */}
-              <div 
-                className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 flex items-center justify-between cursor-pointer"
+              <div
+                className="p-4 bg-gray-50 border-b border-crm-border flex items-center justify-between cursor-pointer"
                 onClick={() => togglePackageExpand(pkgIndex)}
               >
                 <div className="flex items-center gap-3">
-                  <Gift className="text-purple-600" size={20} />
+                  <Gift className="text-crm-primary" size={20} />
                   <input
                     value={pkg.package_name}
                     onChange={(e) => { e.stopPropagation(); updatePackage(pkgIndex, 'package_name', e.target.value); }}
                     onClick={(e) => e.stopPropagation()}
                     placeholder="Package Name (e.g., Birthday Surprise Box) *"
-                    className="bg-transparent border-b border-purple-300 focus:border-purple-600 outline-none px-1 py-1 font-medium w-64"
+                    className="bg-transparent border-b border-gray-300 focus:border-crm-primary outline-none px-1 py-1 font-bold w-64 text-crm-primary"
                     required
                   />
                 </div>
@@ -475,7 +475,7 @@ export default function CreateInvoice() {
                       value={pkg.package_price}
                       onChange={(e) => { e.stopPropagation(); updatePackage(pkgIndex, 'package_price', e.target.value); }}
                       onClick={(e) => e.stopPropagation()}
-                      className="w-28 text-right font-bold text-purple-600 bg-white border rounded px-2 py-1"
+                      className="w-28 text-right font-bold text-crm-primary bg-white border border-crm-border rounded px-2 py-1"
                       min="0"
                     />
                   </div>
@@ -504,7 +504,7 @@ export default function CreateInvoice() {
                             key={p.id}
                             type="button"
                             onClick={() => addItemToPackage(pkgIndex, p)}
-                            className="px-3 py-2 bg-purple-50 text-purple-700 rounded-lg text-sm hover:bg-purple-100"
+                            className="px-3 py-2 bg-crm-accent/30 text-crm-primary rounded-lg text-sm hover:bg-crm-accent font-medium"
                           >
                             {p.name}
                           </button>
@@ -520,12 +520,12 @@ export default function CreateInvoice() {
                       <button
                         type="button"
                         onClick={() => addItemToPackage(pkgIndex)}
-                        className="text-purple-600 text-sm flex items-center gap-1"
+                        className="text-crm-primary text-sm flex items-center gap-1 font-medium hover:underline"
                       >
                         <Plus size={14} /> Custom Item
                       </button>
                     </div>
-                    
+
                     {pkg.items.length === 0 ? (
                       <p className="text-gray-400 text-sm py-4 text-center border-2 border-dashed rounded-lg">
                         Add products to this package
@@ -606,11 +606,10 @@ export default function CreateInvoice() {
                               <button
                                 type="button"
                                 onClick={() => togglePackagingMaterial(pkgIndex, m)}
-                                className={`px-3 py-2 rounded-lg text-sm ${
-                                  isSelected 
-                                    ? 'bg-orange-100 text-orange-700 ring-2 ring-orange-300' 
+                                className={`px-3 py-2 rounded-lg text-sm ${isSelected
+                                    ? 'bg-orange-100 text-orange-700 ring-2 ring-orange-300'
                                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                }`}
+                                  }`}
                               >
                                 {m.name} (Rs. {parseFloat(m.cost_price).toLocaleString()})
                               </button>
@@ -637,10 +636,10 @@ export default function CreateInvoice() {
 
                   {/* Package Summary */}
                   {pkg.items.length > 0 && (
-                    <div className="p-3 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg">
+                    <div className="p-3 bg-gray-50 rounded-lg border border-crm-border">
                       <div className="flex items-center gap-2 mb-2">
-                        <TrendingUp size={16} className="text-green-600" />
-                        <span className="font-medium text-sm">Package Profitability</span>
+                        <TrendingUp size={16} className="text-crm-success" />
+                        <span className="font-medium text-sm text-crm-primary">Package Profitability</span>
                       </div>
                       <div className="grid grid-cols-3 gap-4 text-sm">
                         <div>
@@ -706,14 +705,14 @@ export default function CreateInvoice() {
             </div>
             <div className="flex justify-between font-bold text-lg border-t pt-3">
               <span>Total</span>
-              <span className="text-purple-600">Rs. {total.toLocaleString()}</span>
+              <span className="text-crm-primary">Rs. {total.toLocaleString()}</span>
             </div>
           </div>
 
           {/* Profitability Summary (Internal) */}
-          <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
-            <h3 className="font-medium text-green-800 mb-3 flex items-center gap-2">
-              <TrendingUp size={18} /> Profitability Analysis (Internal)
+          <div className="p-4 bg-gray-50 rounded-lg border border-crm-border">
+            <h3 className="font-medium text-crm-primary mb-3 flex items-center gap-2">
+              <TrendingUp size={18} className="text-crm-success" /> Profitability Analysis (Internal)
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
               <div>
@@ -756,7 +755,7 @@ export default function CreateInvoice() {
         <button
           type="submit"
           disabled={loading || !customerId || packages.every(p => !p.package_name || p.items.length === 0)}
-          className="w-full bg-purple-600 text-white py-4 sm:py-3 rounded-lg font-medium hover:bg-purple-700 active:bg-purple-800 disabled:opacity-50"
+          className="w-full bg-crm-primary text-white py-4 sm:py-3 rounded-xl font-bold hover:bg-gray-800 active:bg-gray-900 disabled:opacity-50 transition-colors"
         >
           {loading ? 'Creating...' : 'Create Order'}
         </button>

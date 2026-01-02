@@ -15,7 +15,7 @@ export default function InvoiceDetail() {
   const [loading, setLoading] = useState(true);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentForm, setPaymentForm] = useState({ amount: '', payment_method: 'bank_transfer', notes: '' });
-  
+
   // Vendor orders state
   const [vendorOrders, setVendorOrders] = useState([]);
   const [vendors, setVendors] = useState([]);
@@ -70,8 +70,8 @@ export default function InvoiceDetail() {
   const addPayment = async (e) => {
     e.preventDefault();
     try {
-      await api.post('/payments', { 
-        invoice_id: id, 
+      await api.post('/payments', {
+        invoice_id: id,
         amount: parseFloat(paymentForm.amount),
         payment_method: paymentForm.payment_method,
         notes: paymentForm.notes
@@ -184,7 +184,7 @@ export default function InvoiceDetail() {
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 text-sm">
             <div>
               <span className="text-gray-600 block">Revenue</span>
-              <span className="text-purple-600 font-semibold">Rs. {parseFloat(invoice.total).toLocaleString()}</span>
+              <span className="text-crm-primary font-semibold">Rs. {parseFloat(invoice.total).toLocaleString()}</span>
             </div>
             <div>
               <span className="text-gray-600 block">Total Cost</span>
@@ -220,9 +220,8 @@ export default function InvoiceDetail() {
               const isCurrent = index === currentStatusIndex;
               return (
                 <div key={step.key} className="flex flex-col items-center flex-1">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                    isCompleted ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'
-                  } ${isCurrent ? 'ring-4 ring-green-200' : ''}`}>
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isCompleted ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'
+                    } ${isCurrent ? 'ring-4 ring-green-200' : ''}`}>
                     <step.icon size={20} />
                   </div>
                   <span className={`text-xs mt-2 ${isCompleted ? 'text-green-600 font-medium' : 'text-gray-500'}`}>
@@ -272,7 +271,7 @@ export default function InvoiceDetail() {
 
       {/* Actions */}
       <div className="flex flex-wrap gap-2">
-        <button onClick={downloadPDF} className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+        <button onClick={downloadPDF} className="flex items-center gap-2 px-4 py-2 bg-crm-primary text-white rounded-lg hover:bg-gray-800 font-medium">
           <Download size={18} /> Internal Invoice
         </button>
         {hasPackages && (
@@ -425,12 +424,12 @@ export default function InvoiceDetail() {
             <h3 className="font-semibold">Packages</h3>
             {invoice.packages.map((pkg, index) => (
               <div key={pkg.id} className="border rounded-lg overflow-hidden">
-                <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 flex justify-between items-center">
+                <div className="p-4 bg-gray-50 border-b border-crm-border flex justify-between items-center">
                   <div className="flex items-center gap-2">
-                    <Gift className="text-purple-600" size={20} />
-                    <span className="font-medium">{pkg.package_name}</span>
+                    <Gift className="text-crm-primary" size={20} />
+                    <span className="font-bold text-crm-primary">{pkg.package_name}</span>
                   </div>
-                  <span className="font-bold text-purple-600">Rs. {parseFloat(pkg.package_price).toLocaleString()}</span>
+                  <span className="font-bold text-crm-primary">Rs. {parseFloat(pkg.package_price).toLocaleString()}</span>
                 </div>
                 <div className="p-4">
                   <table className="w-full text-sm">
@@ -531,7 +530,7 @@ export default function InvoiceDetail() {
           <h2 className="font-semibold mb-4 flex items-center gap-2">
             <DollarSign size={18} /> Payment Summary
           </h2>
-          
+
           {/* Payment Progress */}
           <div className="mb-4">
             <div className="flex justify-between text-sm mb-1">
@@ -539,7 +538,7 @@ export default function InvoiceDetail() {
               <span>Total: Rs. {parseFloat(invoice.total).toLocaleString()}</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-3">
-              <div 
+              <div
                 className={`h-3 rounded-full ${invoice.status === 'paid' ? 'bg-green-500' : 'bg-blue-500'}`}
                 style={{ width: `${Math.min(100, ((parseFloat(invoice.amount_paid) || 0) / parseFloat(invoice.total)) * 100)}%` }}
               />
@@ -550,13 +549,13 @@ export default function InvoiceDetail() {
                   Balance due: Rs. {getBalanceDue().toLocaleString()}
                 </p>
                 <div className="flex gap-2">
-                  <button 
-                    onClick={downloadCustomerPDF} 
+                  <button
+                    onClick={downloadCustomerPDF}
                     className="flex items-center gap-1 px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-sm hover:bg-blue-200"
                   >
                     <Download size={14} /> Invoice with Balance
                   </button>
-                  <button 
+                  <button
                     onClick={() => {
                       const message = encodeURIComponent(
                         `Hi ${invoice.customer_name}!\n\nThis is a friendly reminder for your pending balance.\n\nInvoice: ${invoice.invoice_number}\nTotal: Rs. ${parseFloat(invoice.total).toLocaleString()}\nPaid: Rs. ${parseFloat(invoice.amount_paid || 0).toLocaleString()}\nBalance Due: Rs. ${getBalanceDue().toLocaleString()}\n\nThank you! 🙏`
@@ -587,7 +586,7 @@ export default function InvoiceDetail() {
                       </p>
                     </div>
                     {['pending', 'partial'].includes(invoice.status) && (
-                      <button 
+                      <button
                         onClick={() => deletePayment(payment.id)}
                         className="p-1 text-red-500 hover:bg-red-50 rounded"
                       >
@@ -626,12 +625,11 @@ export default function InvoiceDetail() {
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{vo.vendor_name}</span>
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${
-                        vo.status === 'completed' ? 'bg-green-100 text-green-700' :
-                        vo.status === 'in_progress' ? 'bg-yellow-100 text-yellow-700' :
-                        vo.status === 'cancelled' ? 'bg-red-100 text-red-700' :
-                        'bg-blue-100 text-blue-700'
-                      }`}>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${vo.status === 'completed' ? 'bg-green-100 text-green-700' :
+                          vo.status === 'in_progress' ? 'bg-yellow-100 text-yellow-700' :
+                            vo.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                              'bg-blue-100 text-blue-700'
+                        }`}>
                         {vo.status === 'in_progress' ? 'In Progress' : vo.status.charAt(0).toUpperCase() + vo.status.slice(1)}
                       </span>
                     </div>
@@ -647,7 +645,7 @@ export default function InvoiceDetail() {
                 </div>
               </div>
             ))}
-            <Link to="/vendor-orders" className="block text-center text-sm text-purple-600 hover:underline mt-2">
+            <Link to="/vendor-orders" className="block text-center text-sm text-crm-primary hover:underline mt-2 font-medium">
               View all vendor orders →
             </Link>
           </div>

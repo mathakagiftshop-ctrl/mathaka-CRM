@@ -23,7 +23,7 @@ export default function ActivityLog() {
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold flex items-center gap-2">
-        <Activity className="text-purple-600" /> Activity Log
+        <Activity className="text-crm-primary" /> Activity Log
       </h1>
 
       <div className="bg-white rounded-xl shadow-sm divide-y">
@@ -34,8 +34,8 @@ export default function ActivityLog() {
         ) : (
           logs.map(log => (
             <div key={log.id} className="p-4 flex items-start gap-4">
-              <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
-                <User className="text-purple-600" size={20} />
+              <div className="w-10 h-10 bg-crm-accent rounded-full flex items-center justify-center flex-shrink-0">
+                <User className="text-crm-primary" size={20} />
               </div>
               <div className="flex-1">
                 <p className="font-medium">{log.user_name || 'System'}</p>

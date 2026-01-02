@@ -36,9 +36,9 @@ export default function PackageAssistant() {
       const response = await api.post('/ai/package-suggestions', { message: userMessage });
       setMessages(prev => [...prev, { role: 'assistant', content: response.data.response }]);
     } catch (error) {
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
-        content: 'Sorry, I encountered an error. Please make sure the Gemini API is configured and try again.' 
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: 'Sorry, I encountered an error. Please make sure the Gemini API is configured and try again.'
       }]);
     } finally {
       setLoading(false);
@@ -54,12 +54,12 @@ export default function PackageAssistant() {
   return (
     <div className="h-[calc(100vh-120px)] lg:h-[calc(100vh-80px)] flex flex-col">
       <div className="flex items-center gap-3 mb-4">
-        <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+        <div className="w-10 h-10 bg-crm-primary rounded-xl flex items-center justify-center">
           <Sparkles className="text-white" size={20} />
         </div>
         <div>
-          <h1 className="text-xl font-bold">Package Assistant</h1>
-          <p className="text-sm text-gray-500">AI-powered gift package creator</p>
+          <h1 className="text-xl font-bold text-crm-primary">Package Assistant</h1>
+          <p className="text-sm text-crm-secondary">AI-powered gift package creator</p>
         </div>
       </div>
 
@@ -70,33 +70,31 @@ export default function PackageAssistant() {
             key={index}
             className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
           >
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-              msg.role === 'user' 
-                ? 'bg-purple-100' 
-                : 'bg-gradient-to-br from-purple-500 to-pink-500'
-            }`}>
-              {msg.role === 'user' 
-                ? <User className="text-purple-600" size={16} />
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${msg.role === 'user'
+              ? 'bg-crm-accent'
+              : 'bg-crm-primary'
+              }`}>
+              {msg.role === 'user'
+                ? <User className="text-crm-primary" size={16} />
                 : <Bot className="text-white" size={16} />
               }
             </div>
             <div className={`max-w-[80%] ${msg.role === 'user' ? 'text-right' : ''}`}>
-              <div className={`rounded-2xl px-4 py-3 ${
-                msg.role === 'user'
-                  ? 'bg-purple-600 text-white rounded-tr-sm'
-                  : 'bg-gray-100 text-gray-800 rounded-tl-sm'
-              }`}>
+              <div className={`rounded-2xl px-4 py-3 ${msg.role === 'user'
+                ? 'bg-crm-primary text-white rounded-tr-sm'
+                : 'bg-gray-50 text-gray-800 rounded-tl-sm border border-crm-border'
+                }`}>
                 {msg.role === 'assistant' ? (
                   <div className="prose prose-sm max-w-none">
                     <ReactMarkdown
                       components={{
-                        h2: ({children}) => <h2 className="text-lg font-bold text-purple-700 mt-2 mb-3">{children}</h2>,
-                        h3: ({children}) => <h3 className="text-base font-semibold text-gray-800 mt-4 mb-2">{children}</h3>,
-                        strong: ({children}) => <strong className="font-semibold text-gray-900">{children}</strong>,
-                        ul: ({children}) => <ul className="list-disc list-inside space-y-1 my-2">{children}</ul>,
-                        li: ({children}) => <li className="text-gray-700">{children}</li>,
+                        h2: ({ children }) => <h2 className="text-lg font-bold text-crm-primary mt-2 mb-3">{children}</h2>,
+                        h3: ({ children }) => <h3 className="text-base font-semibold text-crm-primary mt-4 mb-2">{children}</h3>,
+                        strong: ({ children }) => <strong className="font-semibold text-gray-900">{children}</strong>,
+                        ul: ({ children }) => <ul className="list-disc list-inside space-y-1 my-2">{children}</ul>,
+                        li: ({ children }) => <li className="text-gray-700">{children}</li>,
                         hr: () => <hr className="my-4 border-gray-200" />,
-                        p: ({children}) => <p className="my-2 text-gray-700">{children}</p>,
+                        p: ({ children }) => <p className="my-2 text-gray-700">{children}</p>,
                       }}
                     >
                       {msg.content}
@@ -123,11 +121,11 @@ export default function PackageAssistant() {
         ))}
         {loading && (
           <div className="flex gap-3">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-crm-primary flex items-center justify-center">
               <Bot className="text-white" size={16} />
             </div>
-            <div className="bg-gray-100 rounded-2xl rounded-tl-sm px-4 py-3">
-              <Loader2 className="animate-spin text-purple-600" size={20} />
+            <div className="bg-gray-50 border border-crm-border rounded-2xl rounded-tl-sm px-4 py-3">
+              <Loader2 className="animate-spin text-crm-primary" size={20} />
             </div>
           </div>
         )}
@@ -141,13 +139,13 @@ export default function PackageAssistant() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="e.g., Create a package for my wife, budget Rs. 10,000"
-          className="flex-1 px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
+          className="flex-1 px-4 py-3 border border-crm-border rounded-xl focus:outline-none focus:ring-2 focus:ring-crm-accent bg-white"
           disabled={loading}
         />
         <button
           type="submit"
           disabled={loading || !input.trim()}
-          className="px-4 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-4 py-3 bg-crm-primary text-white rounded-xl hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           <Send size={20} />
         </button>
@@ -164,7 +162,7 @@ export default function PackageAssistant() {
           <button
             key={i}
             onClick={() => setInput(suggestion)}
-            className="text-xs px-3 py-1.5 bg-purple-50 text-purple-600 rounded-full hover:bg-purple-100"
+            className="text-xs px-3 py-1.5 bg-crm-accent/30 text-crm-primary rounded-full hover:bg-crm-accent font-medium transition-colors"
           >
             {suggestion}
           </button>

@@ -205,8 +205,8 @@ export default function NotificationBell() {
         <>
           <div className="fixed inset-0 z-40" onClick={() => setShowPanel(false)} />
           <div className="absolute right-0 top-12 w-80 bg-white rounded-xl shadow-xl border z-50 max-h-[28rem] overflow-hidden">
-            <div className="p-3 border-b flex items-center justify-between bg-purple-50">
-              <h3 className="font-semibold text-purple-900">Upcoming Dates</h3>
+            <div className="p-3 border-b flex items-center justify-between bg-gray-50">
+              <h3 className="font-bold text-crm-primary">Upcoming Dates</h3>
               <button onClick={() => setShowPanel(false)} className="text-gray-500">
                 <X size={18} />
               </button>
@@ -265,7 +265,7 @@ export default function NotificationBell() {
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <Calendar size={14} className={n.daysUntil === 0 ? 'text-red-500' : 'text-purple-500'} />
+                          <Calendar size={14} className={n.daysUntil === 0 ? 'text-red-500' : 'text-crm-primary'} />
                           <span className="font-medium text-sm">{n.title}</span>
                         </div>
                         <p className="text-xs text-gray-600 mt-1">

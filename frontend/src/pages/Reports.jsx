@@ -43,26 +43,26 @@ export default function Reports() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold flex items-center gap-2">
-        <BarChart3 className="text-purple-600" /> Reports & Analytics
+        <BarChart3 className="text-crm-primary" /> Reports & Analytics
       </h1>
 
       {/* Tabs */}
       <div className="flex gap-2 border-b overflow-x-auto">
         <button
           onClick={() => setActiveTab('sales')}
-          className={`px-4 py-2 font-medium whitespace-nowrap ${activeTab === 'sales' ? 'text-purple-600 border-b-2 border-purple-600' : 'text-gray-500'}`}
+          className={`px-4 py-2 font-medium whitespace-nowrap ${activeTab === 'sales' ? 'text-crm-primary border-b-2 border-crm-primary' : 'text-gray-500'}`}
         >
           Sales Report
         </button>
         <button
           onClick={() => setActiveTab('profitability')}
-          className={`px-4 py-2 font-medium whitespace-nowrap ${activeTab === 'profitability' ? 'text-purple-600 border-b-2 border-purple-600' : 'text-gray-500'}`}
+          className={`px-4 py-2 font-medium whitespace-nowrap ${activeTab === 'profitability' ? 'text-crm-primary border-b-2 border-crm-primary' : 'text-gray-500'}`}
         >
           Profitability
         </button>
         <button
           onClick={() => setActiveTab('customers')}
-          className={`px-4 py-2 font-medium whitespace-nowrap ${activeTab === 'customers' ? 'text-purple-600 border-b-2 border-purple-600' : 'text-gray-500'}`}
+          className={`px-4 py-2 font-medium whitespace-nowrap ${activeTab === 'customers' ? 'text-crm-primary border-b-2 border-crm-primary' : 'text-gray-500'}`}
         >
           Customer Insights
         </button>
@@ -78,7 +78,7 @@ export default function Reports() {
               </h2>
               <button
                 onClick={() => exportSalesReport(salesData)}
-                className="flex items-center gap-1 px-3 py-1 text-sm bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100"
+                className="flex items-center gap-1 px-3 py-1 text-sm bg-crm-accent/30 text-crm-primary rounded-lg hover:bg-crm-accent font-medium"
               >
                 <Download size={14} /> Export
               </button>
@@ -92,7 +92,7 @@ export default function Reports() {
                   </div>
                   <div className="bg-gray-100 rounded-full h-4 overflow-hidden">
                     <div
-                      className="bg-purple-500 h-full rounded-full transition-all"
+                      className="bg-crm-primary h-full rounded-full transition-all"
                       style={{ width: `${Math.min((m.revenue / Math.max(...salesData.monthly.map(x => x.revenue))) * 100, 100)}%` }}
                     />
                   </div>
@@ -147,7 +147,7 @@ export default function Reports() {
                       <span className="text-xs text-gray-400">#{i + 1}</span>
                       <p className="font-medium">{c.name}</p>
                     </div>
-                    <span className="font-medium text-purple-600">Rs. {c.revenue.toLocaleString()}</span>
+                    <span className="font-medium text-crm-primary">Rs. {c.revenue.toLocaleString()}</span>
                   </div>
                   <p className="text-xs text-gray-500 mt-1">{c.orders} orders</p>
                 </div>
@@ -170,7 +170,7 @@ export default function Reports() {
                       <td className="p-3 text-gray-500">{i + 1}</td>
                       <td className="p-3 font-medium">{c.name}</td>
                       <td className="p-3 text-right">{c.orders}</td>
-                      <td className="p-3 text-right font-medium text-purple-600">Rs. {c.revenue.toLocaleString()}</td>
+                      <td className="p-3 text-right font-medium text-crm-primary">Rs. {c.revenue.toLocaleString()}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -189,7 +189,7 @@ export default function Reports() {
                 <DollarSign size={16} />
                 <span className="text-sm">Total Revenue</span>
               </div>
-              <p className="text-xl font-bold text-purple-600">Rs. {profitData.summary.totalRevenue.toLocaleString()}</p>
+              <p className="text-xl font-bold text-crm-primary">Rs. {profitData.summary.totalRevenue.toLocaleString()}</p>
             </div>
             <div className="bg-white rounded-xl shadow-sm p-4">
               <div className="flex items-center gap-2 text-gray-500 mb-1">

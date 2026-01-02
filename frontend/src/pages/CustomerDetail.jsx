@@ -83,7 +83,7 @@ export default function CustomerDetail() {
         <Link to="/customers" className="p-2 hover:bg-gray-100 rounded-lg">
           <ArrowLeft size={20} />
         </Link>
-        <h1 className="text-2xl font-bold flex-1">{customer.name}</h1>
+        <h1 className="text-2xl font-bold flex-1 text-crm-primary">{customer.name}</h1>
         <button onClick={openWhatsApp} className="p-2 text-green-600 hover:bg-green-50 rounded-lg">
           <MessageCircle size={24} />
         </button>
@@ -96,12 +96,12 @@ export default function CustomerDetail() {
           <div className="flex gap-2">
             {editMode ? (
               <>
-                <button onClick={() => setEditMode(false)} className="text-sm px-3 py-1 border rounded">Cancel</button>
-                <button onClick={handleUpdate} className="text-sm px-3 py-1 bg-purple-600 text-white rounded">Save</button>
+                <button onClick={() => setEditMode(false)} className="text-sm px-3 py-1 border border-crm-border rounded-lg">Cancel</button>
+                <button onClick={handleUpdate} className="text-sm px-3 py-1 bg-crm-primary text-white rounded-lg font-medium">Save</button>
               </>
             ) : (
               <>
-                <button onClick={() => setEditMode(true)} className="p-1 text-gray-500 hover:text-purple-600"><Edit2 size={18} /></button>
+                <button onClick={() => setEditMode(true)} className="p-1 text-crm-secondary hover:text-crm-primary"><Edit2 size={18} /></button>
                 <button onClick={handleDelete} className="p-1 text-gray-500 hover:text-red-600"><Trash2 size={18} /></button>
               </>
             )}
@@ -110,10 +110,10 @@ export default function CustomerDetail() {
 
         {editMode ? (
           <div className="grid sm:grid-cols-2 gap-4">
-            <input value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="px-3 py-2 border rounded-lg" placeholder="Name" />
-            <input value={form.whatsapp} onChange={e => setForm({...form, whatsapp: e.target.value})} className="px-3 py-2 border rounded-lg" placeholder="WhatsApp" />
-            <input value={form.country || ''} onChange={e => setForm({...form, country: e.target.value})} className="px-3 py-2 border rounded-lg" placeholder="Country" />
-            <textarea value={form.notes || ''} onChange={e => setForm({...form, notes: e.target.value})} className="px-3 py-2 border rounded-lg sm:col-span-2" placeholder="Notes" />
+            <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="px-3 py-2 border rounded-lg" placeholder="Name" />
+            <input value={form.whatsapp} onChange={e => setForm({ ...form, whatsapp: e.target.value })} className="px-3 py-2 border rounded-lg" placeholder="WhatsApp" />
+            <input value={form.country || ''} onChange={e => setForm({ ...form, country: e.target.value })} className="px-3 py-2 border rounded-lg" placeholder="Country" />
+            <textarea value={form.notes || ''} onChange={e => setForm({ ...form, notes: e.target.value })} className="px-3 py-2 border rounded-lg sm:col-span-2" placeholder="Notes" />
           </div>
         ) : (
           <div className="grid sm:grid-cols-2 gap-4 text-sm">
@@ -128,7 +128,7 @@ export default function CustomerDetail() {
       <div className="bg-white rounded-xl shadow-sm">
         <div className="p-4 border-b flex justify-between items-center">
           <h2 className="font-semibold flex items-center gap-2"><User size={18} /> Recipients in Sri Lanka</h2>
-          <button onClick={() => setShowRecipientModal(true)} className="text-purple-600 text-sm flex items-center gap-1">
+          <button onClick={() => setShowRecipientModal(true)} className="text-crm-primary text-sm flex items-center gap-1 font-medium hover:underline">
             <Plus size={16} /> Add
           </button>
         </div>
@@ -152,7 +152,7 @@ export default function CustomerDetail() {
       <div className="bg-white rounded-xl shadow-sm">
         <div className="p-4 border-b flex justify-between items-center">
           <h2 className="font-semibold flex items-center gap-2"><Calendar size={18} /> Important Dates</h2>
-          <button onClick={() => setShowDateModal(true)} className="text-purple-600 text-sm flex items-center gap-1">
+          <button onClick={() => setShowDateModal(true)} className="text-crm-primary text-sm flex items-center gap-1 font-medium hover:underline">
             <Plus size={16} /> Add
           </button>
         </div>
@@ -163,7 +163,7 @@ export default function CustomerDetail() {
             <div key={d.id} className="p-4 flex justify-between items-center">
               <div>
                 <p className="font-medium">{d.title}</p>
-                <p className="text-sm text-purple-600">{d.date}</p>
+                <p className="text-sm text-crm-accent font-medium">{d.date}</p>
               </div>
               <button onClick={() => deleteDate(d.id)} className="p-1 text-gray-400 hover:text-red-600"><Trash2 size={16} /></button>
             </div>
@@ -178,11 +178,11 @@ export default function CustomerDetail() {
           <div className="flex gap-2">
             <button
               onClick={() => setShowQuickOrder(true)}
-              className="text-orange-600 text-sm flex items-center gap-1 hover:bg-orange-50 px-3 py-1.5 rounded-lg border border-orange-200"
+              className="text-crm-primary text-sm flex items-center gap-1 hover:bg-crm-accent px-3 py-1.5 rounded-lg border border-crm-border font-medium"
             >
               <Zap size={16} /> Quick Order
             </button>
-            <Link to={`/invoices/new?customer=${id}`} className="text-purple-600 text-sm flex items-center gap-1 hover:bg-purple-50 px-3 py-1.5 rounded-lg">
+            <Link to={`/invoices/new?customer=${id}`} className="text-crm-primary text-sm flex items-center gap-1 hover:bg-gray-100 px-3 py-1.5 rounded-lg border border-crm-border">
               <Plus size={16} /> Full Order
             </Link>
           </div>
@@ -213,13 +213,13 @@ export default function CustomerDetail() {
           <div className="bg-white rounded-xl w-full max-w-md p-6">
             <h2 className="text-xl font-bold mb-4">Add Recipient</h2>
             <form onSubmit={addRecipient} className="space-y-4">
-              <input value={recipientForm.name} onChange={e => setRecipientForm({...recipientForm, name: e.target.value})} placeholder="Name *" className="w-full px-3 py-2 border rounded-lg" required />
-              <input value={recipientForm.phone} onChange={e => setRecipientForm({...recipientForm, phone: e.target.value})} placeholder="Phone" className="w-full px-3 py-2 border rounded-lg" />
-              <input value={recipientForm.relationship} onChange={e => setRecipientForm({...recipientForm, relationship: e.target.value})} placeholder="Relationship (Mother, Wife...)" className="w-full px-3 py-2 border rounded-lg" />
-              <textarea value={recipientForm.address} onChange={e => setRecipientForm({...recipientForm, address: e.target.value})} placeholder="Address" className="w-full px-3 py-2 border rounded-lg" rows={2} />
+              <input value={recipientForm.name} onChange={e => setRecipientForm({ ...recipientForm, name: e.target.value })} placeholder="Name *" className="w-full px-3 py-2 border rounded-lg" required />
+              <input value={recipientForm.phone} onChange={e => setRecipientForm({ ...recipientForm, phone: e.target.value })} placeholder="Phone" className="w-full px-3 py-2 border rounded-lg" />
+              <input value={recipientForm.relationship} onChange={e => setRecipientForm({ ...recipientForm, relationship: e.target.value })} placeholder="Relationship (Mother, Wife...)" className="w-full px-3 py-2 border rounded-lg" />
+              <textarea value={recipientForm.address} onChange={e => setRecipientForm({ ...recipientForm, address: e.target.value })} placeholder="Address" className="w-full px-3 py-2 border rounded-lg" rows={2} />
               <div className="flex gap-2 justify-end">
-                <button type="button" onClick={() => setShowRecipientModal(false)} className="px-4 py-2 border rounded-lg">Cancel</button>
-                <button type="submit" className="px-4 py-2 bg-purple-600 text-white rounded-lg">Add</button>
+                <button type="button" onClick={() => setShowRecipientModal(false)} className="px-4 py-2 border border-crm-border rounded-lg">Cancel</button>
+                <button type="submit" className="px-4 py-2 bg-crm-primary text-white rounded-lg font-medium">Add</button>
               </div>
             </form>
           </div>
@@ -232,16 +232,16 @@ export default function CustomerDetail() {
           <div className="bg-white rounded-xl w-full max-w-md p-6">
             <h2 className="text-xl font-bold mb-4">Add Important Date</h2>
             <form onSubmit={addDate} className="space-y-4">
-              <input value={dateForm.title} onChange={e => setDateForm({...dateForm, title: e.target.value})} placeholder="Title (Birthday, Anniversary...) *" className="w-full px-3 py-2 border rounded-lg" required />
-              <input type="date" value={dateForm.date} onChange={e => setDateForm({...dateForm, date: e.target.value})} className="w-full px-3 py-2 border rounded-lg" required />
-              <select value={dateForm.recipient_id} onChange={e => setDateForm({...dateForm, recipient_id: e.target.value})} className="w-full px-3 py-2 border rounded-lg">
+              <input value={dateForm.title} onChange={e => setDateForm({ ...dateForm, title: e.target.value })} placeholder="Title (Birthday, Anniversary...) *" className="w-full px-3 py-2 border rounded-lg" required />
+              <input type="date" value={dateForm.date} onChange={e => setDateForm({ ...dateForm, date: e.target.value })} className="w-full px-3 py-2 border rounded-lg" required />
+              <select value={dateForm.recipient_id} onChange={e => setDateForm({ ...dateForm, recipient_id: e.target.value })} className="w-full px-3 py-2 border rounded-lg">
                 <option value="">For whom? (optional)</option>
                 {customer.recipients.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
               </select>
-              <textarea value={dateForm.notes} onChange={e => setDateForm({...dateForm, notes: e.target.value})} placeholder="Notes" className="w-full px-3 py-2 border rounded-lg" rows={2} />
+              <textarea value={dateForm.notes} onChange={e => setDateForm({ ...dateForm, notes: e.target.value })} placeholder="Notes" className="w-full px-3 py-2 border rounded-lg" rows={2} />
               <div className="flex gap-2 justify-end">
-                <button type="button" onClick={() => setShowDateModal(false)} className="px-4 py-2 border rounded-lg">Cancel</button>
-                <button type="submit" className="px-4 py-2 bg-purple-600 text-white rounded-lg">Add</button>
+                <button type="button" onClick={() => setShowDateModal(false)} className="px-4 py-2 border border-crm-border rounded-lg">Cancel</button>
+                <button type="submit" className="px-4 py-2 bg-crm-primary text-white rounded-lg font-medium">Add</button>
               </div>
             </form>
           </div>

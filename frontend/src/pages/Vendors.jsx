@@ -52,7 +52,7 @@ export default function Vendors() {
         <h1 className="text-2xl font-bold">Vendors / Suppliers</h1>
         <button
           onClick={() => { setForm({ name: '', phone: '', address: '', notes: '' }); setEditingId(null); setShowModal(true); }}
-          className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
+          className="flex items-center gap-2 bg-crm-primary text-white px-4 py-2 rounded-lg hover:bg-gray-800 font-medium"
         >
           <Plus size={20} /> Add Vendor
         </button>
@@ -76,7 +76,7 @@ export default function Vendors() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={() => handleEdit(vendor)} className="p-2 text-gray-500 hover:text-purple-600 rounded-lg">
+                <button onClick={() => handleEdit(vendor)} className="p-2 text-crm-secondary hover:text-crm-primary rounded-lg">
                   <Edit2 size={18} />
                 </button>
                 {user?.role === 'admin' && (
@@ -124,7 +124,7 @@ export default function Vendors() {
               />
               <div className="flex gap-2 justify-end">
                 <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 border rounded-lg">Cancel</button>
-                <button type="submit" className="px-4 py-2 bg-purple-600 text-white rounded-lg">{editingId ? 'Update' : 'Add'}</button>
+                <button type="submit" className="px-4 py-2 bg-crm-primary text-white rounded-lg font-medium">{editingId ? 'Update' : 'Add'}</button>
               </div>
             </form>
           </div>

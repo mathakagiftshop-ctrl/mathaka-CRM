@@ -48,7 +48,7 @@ export default function Users() {
         <h1 className="text-2xl font-bold">Users</h1>
         <button
           onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
+          className="flex items-center gap-2 bg-crm-primary text-white px-4 py-2 rounded-lg hover:bg-gray-800 font-medium"
         >
           <Plus size={20} /> Add User
         </button>
@@ -61,8 +61,8 @@ export default function Users() {
           users.map(user => (
             <div key={user.id} className="p-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${user.role === 'admin' ? 'bg-purple-100' : 'bg-gray-100'}`}>
-                  {user.role === 'admin' ? <Shield className="text-purple-600" size={20} /> : <UserCircle className="text-gray-600" size={20} />}
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${user.role === 'admin' ? 'bg-crm-accent' : 'bg-gray-100'}`}>
+                  {user.role === 'admin' ? <Shield className="text-crm-primary" size={20} /> : <UserCircle className="text-gray-600" size={20} />}
                 </div>
                 <div>
                   <p className="font-medium">{user.name}</p>
@@ -129,7 +129,7 @@ export default function Users() {
               </div>
               <div className="flex gap-2 justify-end">
                 <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 border rounded-lg">Cancel</button>
-                <button type="submit" className="px-4 py-2 bg-purple-600 text-white rounded-lg">Add User</button>
+                <button type="submit" className="px-4 py-2 bg-crm-primary text-white rounded-lg font-medium">Add User</button>
               </div>
             </form>
           </div>

@@ -57,7 +57,7 @@ export default function Receipts() {
                 </div>
                 <button
                   onClick={(e) => downloadPDF(rec, e)}
-                  className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg"
+                  className="p-2 text-crm-primary hover:bg-gray-100 rounded-lg"
                   title="Download PDF"
                 >
                   <Download size={20} />

@@ -112,8 +112,8 @@ export default function Products() {
         <button
           onClick={() => setActiveTab('product')}
           className={`px-4 py-2 font-medium flex items-center gap-2 border-b-2 transition-colors ${activeTab === 'product'
-              ? 'border-crm-primary text-crm-primary'
-              : 'border-transparent text-crm-secondary hover:text-crm-primary'
+            ? 'border-crm-primary text-crm-primary'
+            : 'border-transparent text-crm-secondary hover:text-crm-primary'
             }`}
         >
           <Package size={18} /> Products
@@ -121,8 +121,8 @@ export default function Products() {
         <button
           onClick={() => setActiveTab('packaging')}
           className={`px-4 py-2 font-medium flex items-center gap-2 border-b-2 transition-colors ${activeTab === 'packaging'
-              ? 'border-crm-primary text-crm-primary'
-              : 'border-transparent text-crm-secondary hover:text-crm-primary'
+            ? 'border-crm-primary text-crm-primary'
+            : 'border-transparent text-crm-secondary hover:text-crm-primary'
             }`}
         >
           <Box size={18} /> Packaging Materials
@@ -233,7 +233,7 @@ export default function Products() {
                 <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 border rounded-lg" disabled={submitting}>
                   Cancel
                 </button>
-                <button type="submit" className="px-4 py-2 bg-purple-600 text-white rounded-lg disabled:opacity-50" disabled={submitting}>
+                <button type="submit" className="px-4 py-2 bg-crm-primary text-white rounded-lg disabled:opacity-50 font-medium" disabled={submitting}>
                   {submitting ? 'Saving...' : (editingId ? 'Update' : 'Add')}
                 </button>
               </div>

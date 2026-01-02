@@ -22,33 +22,30 @@ export default function WorkflowProgress({ currentStep, steps }) {
             <div key={step.id} className="flex items-center">
               <div className="flex flex-col items-center">
                 <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-                    isCompleted
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${isCompleted
                       ? 'bg-green-500 text-white'
                       : isCurrent
-                      ? 'bg-purple-600 text-white ring-4 ring-purple-100'
-                      : 'bg-gray-100 text-gray-400'
-                  }`}
+                        ? 'bg-crm-primary text-white ring-4 ring-crm-accent/30'
+                        : 'bg-gray-100 text-gray-400'
+                    }`}
                 >
                   {isCompleted ? <Check size={20} /> : <Icon size={20} />}
                 </div>
                 <span
-                  className={`text-xs mt-1 font-medium ${
-                    isCompleted
+                  className={`text-xs mt-1 font-medium ${isCompleted
                       ? 'text-green-600'
                       : isCurrent
-                      ? 'text-purple-600'
-                      : 'text-gray-400'
-                  }`}
+                        ? 'text-crm-primary font-bold'
+                        : 'text-gray-400'
+                    }`}
                 >
                   {step.label}
                 </span>
               </div>
               {index < stepsToShow.length - 1 && (
                 <div
-                  className={`w-12 sm:w-20 h-1 mx-2 rounded ${
-                    isCompleted ? 'bg-green-500' : 'bg-gray-200'
-                  }`}
+                  className={`w-12 sm:w-20 h-1 mx-2 rounded ${isCompleted ? 'bg-green-500' : 'bg-gray-200'
+                    }`}
                 />
               )}
             </div>

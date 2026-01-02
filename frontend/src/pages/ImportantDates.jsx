@@ -66,7 +66,7 @@ export default function ImportantDates() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Calendar className="text-purple-600" />
+            <Calendar className="text-crm-primary" />
             Important Dates
           </h1>
           <p className="text-gray-500 text-sm mt-1">
@@ -79,14 +79,14 @@ export default function ImportantDates() {
           <div className="flex bg-gray-100 rounded-lg p-1">
             <button
               onClick={() => setViewMode('calendar')}
-              className={`p-2 rounded-md transition-colors ${viewMode === 'calendar' ? 'bg-white shadow text-purple-600' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`p-2 rounded-md transition-colors ${viewMode === 'calendar' ? 'bg-white shadow text-crm-primary' : 'text-gray-500 hover:text-gray-700'}`}
               title="Calendar view"
             >
               <Grid size={18} />
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`p-2 rounded-md transition-colors ${viewMode === 'list' ? 'bg-white shadow text-purple-600' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`p-2 rounded-md transition-colors ${viewMode === 'list' ? 'bg-white shadow text-crm-primary' : 'text-gray-500 hover:text-gray-700'}`}
               title="List view"
             >
               <List size={18} />
@@ -108,7 +108,7 @@ export default function ImportantDates() {
           </p>
           <Link
             to="/customers"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-crm-primary text-white rounded-lg hover:bg-gray-800 font-medium"
           >
             <Plus size={18} />
             Go to Customers
@@ -130,11 +130,11 @@ export default function ImportantDates() {
                 {monthDates.map(date => (
                   <div key={date.id} className="p-4 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className="w-12 h-12 bg-purple-100 rounded-lg flex flex-col items-center justify-center flex-shrink-0">
-                        <span className="text-xs text-purple-600">
+                      <div className="w-12 h-12 bg-crm-accent rounded-lg flex flex-col items-center justify-center flex-shrink-0">
+                        <span className="text-xs text-crm-primary">
                           {new Date(date.date + 'T00:00:00').toLocaleString('default', { month: 'short' })}
                         </span>
-                        <span className="text-lg font-bold text-purple-700">
+                        <span className="text-lg font-bold text-crm-primary">
                           {date.date.substring(8, 10)}
                         </span>
                       </div>
@@ -142,7 +142,7 @@ export default function ImportantDates() {
                         <p className="font-medium truncate">{date.title}</p>
                         <Link
                           to={`/customers/${date.customer_id}`}
-                          className="text-sm text-purple-600 hover:underline flex items-center gap-1"
+                          className="text-sm text-crm-primary hover:underline flex items-center gap-1 font-medium"
                         >
                           <User size={14} />
                           <span className="truncate">{date.customer_name}</span>
@@ -181,7 +181,7 @@ export default function ImportantDates() {
               <span className="text-gray-600">Anniversary</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-purple-500"></div>
+              <div className="w-3 h-3 rounded-full bg-crm-accent"></div>
               <span className="text-gray-600">Other</span>
             </div>
           </div>

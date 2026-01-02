@@ -23,42 +23,42 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-600 to-pink-500 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-8">
+    <div className="min-h-screen bg-crm-background flex items-center justify-center p-4">
+      <div className="bg-white rounded-3xl shadow-floating w-full max-w-md p-8 ring-1 ring-black/5">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-100 rounded-full mb-4">
-            <Gift className="text-purple-600" size={32} />
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-crm-accent rounded-2xl mb-4">
+            <Gift className="text-crm-primary" size={32} />
           </div>
-          <h1 className="text-2xl font-bold text-gray-800">Mathaka Gift Store</h1>
-          <p className="text-gray-500">Sign in to your account</p>
+          <h1 className="text-2xl font-bold text-crm-primary">Mathaka Gift Store</h1>
+          <p className="text-crm-secondary mt-1">Sign in to your account</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           {error && (
-            <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg text-sm">
+            <div className="bg-red-50 text-red-600 px-4 py-3 rounded-xl text-sm font-medium">
               {error}
             </div>
           )}
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+          <div className="group">
+            <label className="block text-sm font-medium text-crm-secondary mb-2 group-focus-within:text-crm-primary transition-colors">Username</label>
             <input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-full px-4 py-3 bg-gray-50 border-0 rounded-xl ring-1 ring-gray-200 focus:ring-2 focus:ring-crm-accent outline-none transition-all"
               autoComplete="username"
               required
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+          <div className="group">
+            <label className="block text-sm font-medium text-crm-secondary mb-2 group-focus-within:text-crm-primary transition-colors">Password</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-full px-4 py-3 bg-gray-50 border-0 rounded-xl ring-1 ring-gray-200 focus:ring-2 focus:ring-crm-accent outline-none transition-all"
               autoComplete="current-password"
               required
             />
@@ -67,7 +67,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-purple-600 text-white py-4 rounded-lg font-medium hover:bg-purple-700 active:bg-purple-800 transition-colors disabled:opacity-50 touch-target"
+            className="w-full bg-crm-primary text-white py-4 rounded-xl font-bold hover:bg-gray-800 active:bg-gray-900 transition-colors disabled:opacity-50 touch-target"
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </button>

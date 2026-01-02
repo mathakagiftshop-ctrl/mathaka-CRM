@@ -48,7 +48,7 @@ export default function Expenses() {
         <h1 className="text-2xl font-bold">Expenses</h1>
         <button
           onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
+          className="flex items-center gap-2 bg-crm-primary text-white px-4 py-2 rounded-lg hover:bg-gray-800 font-medium"
         >
           <Plus size={20} /> Add Expense
         </button>
@@ -72,7 +72,7 @@ export default function Expenses() {
             <p className="text-2xl font-bold">Rs. {summary.totalExpenses.toLocaleString()}</p>
           </div>
           <div className="bg-white rounded-xl p-4 shadow-sm">
-            <div className="flex items-center gap-2 text-purple-600 mb-2">
+            <div className="flex items-center gap-2 text-crm-primary mb-2">
               <DollarSign size={20} />
               <span className="text-sm">Profit</span>
             </div>
@@ -90,7 +90,7 @@ export default function Expenses() {
 
       {/* This Month */}
       {summary && (
-        <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl p-6 text-white">
+        <div className="bg-crm-primary rounded-xl p-6 text-white">
           <h3 className="text-lg font-semibold mb-4">This Month</h3>
           <div className="grid grid-cols-3 gap-4">
             <div>
@@ -182,7 +182,7 @@ export default function Expenses() {
               />
               <div className="flex gap-2 justify-end">
                 <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 border rounded-lg">Cancel</button>
-                <button type="submit" className="px-4 py-2 bg-purple-600 text-white rounded-lg">Add Expense</button>
+                <button type="submit" className="px-4 py-2 bg-crm-primary text-white rounded-lg font-medium">Add Expense</button>
               </div>
             </form>
           </div>
